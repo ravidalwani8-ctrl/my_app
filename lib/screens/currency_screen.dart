@@ -97,7 +97,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       labelText: "Conversion Rate (Enter rate only)",
-                      hintText: "Example: If 1 USD= 83INR, enter 83",
+                      hintText: "Example: If 1 USD= 83 INR, enter 83",
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (v) {
