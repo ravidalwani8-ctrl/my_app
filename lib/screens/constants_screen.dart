@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/gradient_header.dart';
 import '../data/constants_data.dart';
 
 class ConstantsScreen extends StatelessWidget {
@@ -7,25 +8,34 @@ class ConstantsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Scientific Constants")),
+      body: Column(
+        children: [
+          const GradientHeader(title: "Scientific Constants", showBack: true),
 
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: constants.map((c) {
-          return Card(
-            elevation: 2,
-            child: ListTile(
-              title: Text(
-                c["name"]!,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              subtitle: Text(c["value"]!, style: const TextStyle(fontSize: 16)),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: scientificConstants.length,
+              itemBuilder: (context, i) {
+                final constant = scientificConstants[i];
+
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.science, color: Colors.green),
+                    title: Text(
+                      constant.name,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    subtitle: Text(
+                      "${constant.symbol} = ${constant.value}",
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }

@@ -13,9 +13,12 @@ class MyApp extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: "Smart Converter",
+      debugShowCheckedModeBanner: false,
+
+      // Apply your AppTheme here
       theme: themeProvider.isDark ? AppTheme.dark() : AppTheme.light(),
+
       home: const HomeScreen(),
     );
   }

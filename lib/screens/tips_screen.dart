@@ -4,7 +4,7 @@ import '../widgets/gradient_header.dart';
 class TipsScreen extends StatelessWidget {
   const TipsScreen({super.key});
 
-  final tips = const [
+  static const tips = [
     "1 km = 1000 m",
     "1 inch = 2.54 cm",
     "1 kg = 2.204 pounds",
@@ -18,7 +18,7 @@ class TipsScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          const GradientHeader(title: "Tips & Tricks"),
+          const GradientHeader(title: "Tips & Tricks", showBack: true),
 
           Expanded(
             child: ListView(

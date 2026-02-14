@@ -14,7 +14,7 @@ class FavoritesScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          const GradientHeader(title: "Favorites"),
+          const GradientHeader(title: "Favorites", showBack: true),
 
           Expanded(
             child: favs.isEmpty
@@ -38,7 +38,7 @@ class FavoritesScreen extends StatelessWidget {
                           ),
                           title: Text(
                             "${f.fromUnit} → ${f.toUnit}",
-                            style: const TextStyle(fontSize: 18),
+                            style: const TextStyle(fontSize: 17),
                           ),
                           subtitle: Text(f.sampleConversion),
                           trailing: IconButton(

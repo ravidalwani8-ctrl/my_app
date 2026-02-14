@@ -10,4 +10,9 @@ class HistoryProvider extends ChangeNotifier {
     _history.insert(0, item); // newest at top
     notifyListeners();
   }
+
+  void clearHistory() {
+    _history.clear();
+    notifyListeners();
+  }
 }

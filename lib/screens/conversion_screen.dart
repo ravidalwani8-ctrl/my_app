@@ -21,37 +21,9 @@ class ConversionScreen extends StatefulWidget {
 class _ConversionScreenState extends State<ConversionScreen> {
   late Unit fromUnit;
   late Unit toUnit;
+
   String input = "";
   double result = 0;
-
-  String _formatDouble(double v) {
-    if (v == v.roundToDouble()) return v.toInt().toString();
-    return v.toStringAsPrecision(6);
-  }
-
-  String getDynamicHint() {
-    // Prefer explicit per-unit hints when present
-    if (fromUnit.hint.isNotEmpty) return fromUnit.hint;
-    if (toUnit.hint.isNotEmpty) return toUnit.hint;
-
-    final cat = widget.category.name.toLowerCase();
-    // Category-specific hints
-    if (cat.contains('temperature')) {
-      return 'Celsius ↔ Fahrenheit:\nF = C × 9/5 + 32\nC = (F − 32) × 5/9';
-    }
-
-    if (cat.contains('currency')) {
-      return 'Currency rates change frequently — enable auto-updates for live rates.';
-    }
-
-    // Generic conversion formula using unit factors
-    final ratio = fromUnit.factor / toUnit.factor;
-    final example =
-        '1 ${fromUnit.name} = ${_formatDouble(ratio)} ${toUnit.name}';
-    final formula =
-        'To convert: value_in_${toUnit.name} = value_in_${fromUnit.name} × ${_formatDouble(ratio)}';
-    return '$example\n$formula';
-  }
 
   @override
   void initState() {
@@ -67,8 +39,12 @@ class _ConversionScreenState extends State<ConversionScreen> {
     }
 
     double value = double.tryParse(input) ?? 0;
-    double base = value * fromUnit.factor;
-    setState(() => result = base / toUnit.factor);
+    double baseValue = value * fromUnit.factor;
+    double finalValue = baseValue / toUnit.factor;
+
+    setState(() {
+      result = finalValue;
+    });
   }
 
   void swapUnits() {
@@ -110,17 +86,24 @@ class _ConversionScreenState extends State<ConversionScreen> {
     return Scaffold(
       body: Column(
         children: [
-          GradientHeader(title: widget.category.name),
+          GradientHeader(title: widget.category.name, showBack: true),
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               children: [
-                // Input
+                // LABEL
+                Text(
+                  "Enter value to convert",
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+
+                // VALUE INPUT
                 TextField(
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: "Enter value",
+                    labelText: "Value",
                     border: OutlineInputBorder(),
                   ),
                   onChanged: (v) {
@@ -128,11 +111,12 @@ class _ConversionScreenState extends State<ConversionScreen> {
                     convert();
                   },
                 ),
-                const SizedBox(height: 16),
 
-                // From Unit
+                const SizedBox(height: 20),
+
+                // FROM UNIT
                 DropdownButtonFormField<Unit>(
-                  value: fromUnit,
+                  initialValue: fromUnit,
                   decoration: const InputDecoration(
                     labelText: "From Unit",
                     border: OutlineInputBorder(),
@@ -148,12 +132,12 @@ class _ConversionScreenState extends State<ConversionScreen> {
 
                 const SizedBox(height: 10),
 
-                // Switch Button
+                // SWITCH BUTTON
                 Center(
                   child: IconButton(
                     icon: const Icon(
                       Icons.swap_vert,
-                      size: 36,
+                      size: 40,
                       color: Colors.purple,
                     ),
                     onPressed: swapUnits,
@@ -162,9 +146,9 @@ class _ConversionScreenState extends State<ConversionScreen> {
 
                 const SizedBox(height: 10),
 
-                // To Unit
+                // TO UNIT
                 DropdownButtonFormField<Unit>(
-                  value: toUnit,
+                  initialValue: toUnit,
                   decoration: const InputDecoration(
                     labelText: "To Unit",
                     border: OutlineInputBorder(),
@@ -178,49 +162,32 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   },
                 ),
 
-                // Result
+                const SizedBox(height: 25),
+
+                // RESULT BOX
                 ResultBox(label: "Result", value: "$result ${toUnit.name}"),
 
                 const SizedBox(height: 20),
 
-                // Hint / Formula Card
-                Card(
-                  color: Colors.purple.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Hint',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          getDynamicHint(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                // TIPS
+                const Text(
+                  "💡 Tip: Learn patterns — e.g., 1 km = 1000 m, 1 kg = 1000 g, 1 inch = 2.54 cm.",
+                  style: TextStyle(fontSize: 15, color: Colors.grey),
                 ),
 
                 const SizedBox(height: 20),
 
-                // Action Buttons
+                // ACTION BUTTONS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.favorite),
+                      icon: const Icon(Icons.favorite_border),
                       label: const Text("Favorite"),
                       onPressed: saveFavorite,
                     ),
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.history),
+                      icon: const Icon(Icons.save_alt),
                       label: const Text("Save"),
                       onPressed: saveHistory,
                     ),

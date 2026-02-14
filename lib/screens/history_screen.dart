@@ -13,7 +13,7 @@ class HistoryScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          const GradientHeader(title: "History"),
+          const GradientHeader(title: "History", showBack: true),
 
           Expanded(
             child: history.isEmpty
@@ -30,6 +30,7 @@ class HistoryScreen extends StatelessWidget {
                       final h = history[i];
 
                       return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           leading: const Icon(
                             Icons.history,
@@ -37,6 +38,7 @@ class HistoryScreen extends StatelessWidget {
                           ),
                           title: Text(
                             "${h.inputValue} ${h.fromUnit} → ${h.result} ${h.toUnit}",
+                            style: const TextStyle(fontSize: 17),
                           ),
                           subtitle: Text(h.timestamp),
                         ),

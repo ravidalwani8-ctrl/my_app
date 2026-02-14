@@ -8,6 +8,7 @@ import 'constants_screen.dart';
 import 'tips_screen.dart';
 import 'favorites_screen.dart';
 import 'history_screen.dart';
+import 'settings_screen.dart';
 import '../widgets/gradient_header.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -24,14 +25,20 @@ class HomeScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                ...allCategories.map((cat) {
-                  return Card(
+                /// ===============================
+                /// MAIN CATEGORIES
+                /// ===============================
+                ...allCategories.map(
+                  (cat) => Card(
                     child: ListTile(
                       leading: const Icon(
                         Icons.swap_horiz,
                         color: Colors.purple,
                       ),
-                      title: Text(cat.name),
+                      title: Text(
+                        cat.name,
+                        style: const TextStyle(fontSize: 18),
+                      ),
                       trailing: const Icon(Icons.keyboard_arrow_right),
                       onTap: () {
                         if (cat.name.contains("Currency")) {
@@ -51,80 +58,139 @@ class HomeScreen extends StatelessWidget {
                         }
                       },
                     ),
-                  );
-                }),
+                  ),
+                ),
 
+                const SizedBox(height: 10),
+
+                /// ===============================
+                /// TEMPERATURE
+                /// ===============================
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.thermostat, color: Colors.orange),
                     title: const Text("Temperature"),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TemperatureScreen(),
-                      ),
-                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TemperatureScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
 
+                /// ===============================
+                /// CUSTOM CONVERTER
+                /// ===============================
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.edit, color: Colors.blue),
                     title: const Text("Custom Converter"),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CustomConversionScreen(),
-                      ),
-                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CustomConversionScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
 
+                /// ===============================
+                /// SCIENTIFIC CONSTANTS
+                /// ===============================
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.science, color: Colors.green),
                     title: const Text("Scientific Constants"),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ConstantsScreen(),
-                      ),
-                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ConstantsScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
 
+                /// ===============================
+                /// TIPS
+                /// ===============================
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.lightbulb, color: Colors.amber),
                     title: const Text("Tips & Tricks"),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TipsScreen()),
-                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const TipsScreen()),
+                      );
+                    },
                   ),
                 ),
 
+                /// ===============================
+                /// FAVORITES
+                /// ===============================
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.favorite, color: Colors.red),
                     title: const Text("Favorites"),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FavoritesScreen(),
-                      ),
-                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FavoritesScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
 
+                /// ===============================
+                /// HISTORY
+                /// ===============================
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.history, color: Colors.brown),
                     title: const Text("History"),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const HistoryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                /// ===============================
+                /// SETTINGS
+                /// ===============================
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.settings, color: Colors.grey),
+                    title: const Text("Settings"),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
