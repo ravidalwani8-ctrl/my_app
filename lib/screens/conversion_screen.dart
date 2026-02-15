@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../utils/decimal_text_input_formatter.dart';
+import 'package:flutter/services.dart';
 import '../models/category.dart';
 import '../models/unit.dart';
 import '../providers/history_provider.dart';
@@ -21,15 +23,25 @@ class ConversionScreen extends StatefulWidget {
 class _ConversionScreenState extends State<ConversionScreen> {
   late Unit fromUnit;
   late Unit toUnit;
+  late Map<String, double> unitMap;
 
   String input = "";
   double result = 0;
+  late TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
     fromUnit = widget.category.units.first;
     toUnit = widget.category.units.last;
+    unitMap = {for (final u in widget.category.units) u.name: u.factor};
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   void convert() {
@@ -39,8 +51,11 @@ class _ConversionScreenState extends State<ConversionScreen> {
     }
 
     double value = double.tryParse(input) ?? 0;
-    double baseValue = value * fromUnit.factor;
-    double finalValue = baseValue / toUnit.factor;
+    // Map-based conversion using unit name -> factor map
+    final fromFactor = unitMap[fromUnit.name] ?? fromUnit.factor;
+    final toFactor = unitMap[toUnit.name] ?? toUnit.factor;
+    double baseValue = value * fromFactor;
+    double finalValue = baseValue / toFactor;
 
     setState(() {
       result = finalValue;
@@ -63,7 +78,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
         fromUnit: fromUnit.name,
         toUnit: toUnit.name,
         sampleConversion:
-            "1 ${fromUnit.name} = ${fromUnit.factor / toUnit.factor} ${toUnit.name}",
+            "1 ${fromUnit.name} = ${_formatNumber(fromUnit.factor / toUnit.factor)} ${toUnit.name}",
       ),
     );
   }
@@ -75,10 +90,17 @@ class _ConversionScreenState extends State<ConversionScreen> {
         fromUnit: fromUnit.name,
         toUnit: toUnit.name,
         inputValue: input,
-        result: result.toString(),
+        result: _formatNumber(result),
         timestamp: DateTime.now().toString(),
       ),
     );
+  }
+
+  String _formatNumber(double v) {
+    if (v.isInfinite || v.isNaN) return "0";
+    if (v == v.roundToDouble()) return v.toInt().toString();
+    String s = v.toStringAsFixed(6);
+    return s.replaceFirst(RegExp(r"\.?0+"), "");
   }
 
   @override
@@ -106,6 +128,12 @@ class _ConversionScreenState extends State<ConversionScreen> {
                     labelText: "Value",
                     border: OutlineInputBorder(),
                   ),
+                  controller: _controller,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
+                    DecimalTextInputFormatter(decimalRange: 6),
+                  ],
+                  autofocus: true,
                   onChanged: (v) {
                     input = v;
                     convert();
@@ -122,7 +150,10 @@ class _ConversionScreenState extends State<ConversionScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: widget.category.units.map((u) {
-                    return DropdownMenuItem(value: u, child: Text(u.name));
+                    return DropdownMenuItem<Unit>(
+                      value: u,
+                      child: Text(u.name),
+                    );
                   }).toList(),
                   onChanged: (v) {
                     fromUnit = v!;
@@ -154,7 +185,10 @@ class _ConversionScreenState extends State<ConversionScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: widget.category.units.map((u) {
-                    return DropdownMenuItem(value: u, child: Text(u.name));
+                    return DropdownMenuItem<Unit>(
+                      value: u,
+                      child: Text(u.name),
+                    );
                   }).toList(),
                   onChanged: (v) {
                     toUnit = v!;
@@ -165,13 +199,16 @@ class _ConversionScreenState extends State<ConversionScreen> {
                 const SizedBox(height: 25),
 
                 // RESULT BOX
-                ResultBox(label: "Result", value: "$result ${toUnit.name}"),
+                ResultBox(
+                  label: "Result",
+                  value: "${_formatNumber(result)} ${toUnit.name}",
+                ),
 
                 const SizedBox(height: 20),
 
                 // TIPS
                 const Text(
-                  "💡 Tip: Learn patterns — e.g., 1 km = 1000 m, 1 kg = 1000 g, 1 inch = 2.54 cm.",
+                  "💡 Tip: 1 m/sec= 3.6 Km/hr, 1 bar = 14.5038 psi, 1 inch = 2.54 cm, 1 KB = 1024 Bytes.",
                   style: TextStyle(fontSize: 15, color: Colors.grey),
                 ),
 
@@ -188,7 +225,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.save_alt),
-                      label: const Text("Save"),
+                      label: const Text("Save to History"),
                       onPressed: saveHistory,
                     ),
                   ],

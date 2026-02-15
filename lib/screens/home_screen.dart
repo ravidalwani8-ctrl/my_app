@@ -4,15 +4,79 @@ import 'conversion_screen.dart';
 import 'temperature_screen.dart';
 import 'currency_screen.dart';
 import 'custom_conversion_screen.dart';
-import 'constants_screen.dart';
-import 'tips_screen.dart';
+import 'tips_constants_screen.dart';
 import 'favorites_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
 import '../widgets/gradient_header.dart';
 
+final Map<String, IconData> categoryIcons = {
+  "Length": Icons.straighten,
+  "Weight": Icons.monitor_weight,
+  //"Area": Icons.crop_square,
+  //"Volume": Icons.local_drink,
+  "Speed": Icons.speed,
+  "Time": Icons.access_time,
+  "Pressure": Icons.compress,
+  "Energy": Icons.bolt,
+  //"Power": Icons.power,
+  "Data": Icons.storage,
+};
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  // Helper function to get category color
+  Color _getCategoryColor(String categoryName) {
+    switch (categoryName) {
+      case "Length":
+        return Colors.orange;
+      case "Weight":
+        return Colors.blue;
+      case "Time":
+        return Colors.amber;
+      case "Energy":
+        return Colors.red;
+      case "Speed":
+        return Colors.green;
+      case "Pressure":
+        return Colors.orange;
+      case "Data":
+        return Colors.blue;
+      default:
+        return Colors.purple;
+    }
+  }
+
+  // Helper widget for 2x2 Grid
+  Widget _gridCard(
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+    BuildContext context, {
+    Color? iconColor,
+  }) {
+    final color =
+        iconColor ??
+        (Theme.of(context).brightness == Brightness.dark
+            ? Colors.purpleAccent
+            : Colors.purple);
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: color),
+              const SizedBox(height: 10),
+              Text(title, style: const TextStyle(fontSize: 16)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,51 +89,27 @@ class HomeScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                /// ===============================
-                /// MAIN CATEGORIES
-                /// ===============================
-                ...allCategories.map(
-                  (cat) => Card(
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.swap_horiz,
-                        color: Colors.purple,
-                      ),
-                      title: Text(
-                        cat.name,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      trailing: const Icon(Icons.keyboard_arrow_right),
-                      onTap: () {
-                        if (cat.name.contains("Currency")) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CurrencyScreen(),
-                            ),
-                          );
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ConversionScreen(category: cat),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                /// ===============================
-                /// TEMPERATURE
-                /// ===============================
+                /// ----------------------------------------------------
+                /// 1) TEMPERATURE (FIRST)
+                /// ----------------------------------------------------
                 Card(
                   child: ListTile(
-                    leading: const Icon(Icons.thermostat, color: Colors.orange),
-                    title: const Text("Temperature"),
+                    leading: const Icon(Icons.thermostat, color: Colors.red),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Temperature",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        Icon(
+                          Icons.swap_horiz,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.purpleAccent
+                              : Colors.purple,
+                        ),
+                      ],
+                    ),
                     trailing: const Icon(Icons.keyboard_arrow_right),
                     onTap: () {
                       Navigator.push(
@@ -82,13 +122,107 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                /// ===============================
-                /// CUSTOM CONVERTER
-                /// ===============================
+                const SizedBox(height: 10),
+
+                /// ----------------------------------------------------
+                /// 2) CURRENCY (SECOND)
+                /// ----------------------------------------------------
                 Card(
                   child: ListTile(
-                    leading: const Icon(Icons.edit, color: Colors.blue),
-                    title: const Text("Custom Converter"),
+                    leading: Icon(
+                      Icons.currency_exchange,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.lightGreen
+                          : Colors.green,
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Currency Converter",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        Icon(
+                          Icons.swap_horiz,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.purpleAccent
+                              : Colors.purple,
+                        ),
+                      ],
+                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CurrencyScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                /// ----------------------------------------------------
+                /// 3) MAIN CATEGORIES (Length, Weight, Area, etc.)
+                /// ----------------------------------------------------
+                ...allCategories.map(
+                  (cat) => Card(
+                    child: ListTile(
+                      leading: Icon(
+                        categoryIcons[cat.name] ?? Icons.ac_unit,
+                        color: _getCategoryColor(cat.name),
+                      ),
+                      title: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(cat.name, style: const TextStyle(fontSize: 18)),
+                          Icon(
+                            Icons.swap_horiz,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.purpleAccent
+                                : Colors.purple,
+                          ),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.keyboard_arrow_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ConversionScreen(category: cat),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                /// ----------------------------------------------------
+                /// 4) CUSTOM CONVERTER
+                /// ----------------------------------------------------
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.edit, color: Colors.amber),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Custom Converter",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        Icon(
+                          Icons.swap_horiz,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.purpleAccent
+                              : Colors.purple,
+                        ),
+                      ],
+                    ),
                     trailing: const Icon(Icons.keyboard_arrow_right),
                     onTap: () {
                       Navigator.push(
@@ -101,97 +235,78 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                /// ===============================
-                /// SCIENTIFIC CONSTANTS
-                /// ===============================
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.science, color: Colors.green),
-                    title: const Text("Scientific Constants"),
-                    trailing: const Icon(Icons.keyboard_arrow_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ConstantsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                const SizedBox(height: 10),
 
-                /// ===============================
-                /// TIPS
-                /// ===============================
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.lightbulb, color: Colors.amber),
-                    title: const Text("Tips & Tricks"),
-                    trailing: const Icon(Icons.keyboard_arrow_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TipsScreen()),
-                      );
-                    },
-                  ),
-                ),
+                /// ----------------------------------------------------
+                /// 6) 2×2 GRID: Tips, Favorites, History, Settings
+                /// ----------------------------------------------------
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.5,
+                  padding: const EdgeInsets.all(8),
+                  children: [
+                    _gridCard(
+                      Icons.lightbulb,
+                      "Tips & Tricks",
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TipsConstantsScreen(),
+                          ),
+                        );
+                      },
+                      context,
+                      iconColor: Colors.green,
+                    ),
 
-                /// ===============================
-                /// FAVORITES
-                /// ===============================
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.favorite, color: Colors.red),
-                    title: const Text("Favorites"),
-                    trailing: const Icon(Icons.keyboard_arrow_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const FavoritesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                    _gridCard(
+                      Icons.favorite,
+                      "Favorites",
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const FavoritesScreen(),
+                          ),
+                        );
+                      },
+                      context,
+                      iconColor: Colors.amber,
+                    ),
 
-                /// ===============================
-                /// HISTORY
-                /// ===============================
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.history, color: Colors.brown),
-                    title: const Text("History"),
-                    trailing: const Icon(Icons.keyboard_arrow_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HistoryScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                    _gridCard(
+                      Icons.history,
+                      "History",
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HistoryScreen(),
+                          ),
+                        );
+                      },
+                      context,
+                      iconColor: Colors.orange,
+                    ),
 
-                /// ===============================
-                /// SETTINGS
-                /// ===============================
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.settings, color: Colors.grey),
-                    title: const Text("Settings"),
-                    trailing: const Icon(Icons.keyboard_arrow_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
+                    _gridCard(
+                      Icons.settings,
+                      "Settings",
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        );
+                      },
+                      context,
+                      iconColor: Colors.blue,
+                    ),
+                  ],
                 ),
               ],
             ),

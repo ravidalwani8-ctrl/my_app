@@ -7,7 +7,7 @@ final List<Category> allCategories = [
     name: "Length",
     units: [
       Unit("Meter", 1, 'Base unit for length.'),
-      Unit("Kilometer", 1000, 'Remember: 1 km = 1000 m'),
+      Unit("Kilometer", 1000, '1 km = 1000 m'),
       Unit("Centimeter", 0.01, '100 cm = 1 m'),
       Unit("Millimeter", 0.001, '1000 mm = 1 m'),
       Unit("Foot", 0.3048, '1 ft = 0.3048 m'),
@@ -89,17 +89,4 @@ final List<Category> allCategories = [
   ),
 
   // NOTE: Temperature handled separately via temperature_screen.dart
-
-  // CURRENCY — manual user rate
-  Category(
-    name: "Currency (Manual Rate)",
-    units: [
-      Unit("INR", 1, 'Indian Rupee — manual rate'),
-      Unit(
-        "USD",
-        0.012,
-        'US Dollar — placeholder rate',
-      ), // Placeholder only; actual value entered by user
-    ],
-  ),
 ];

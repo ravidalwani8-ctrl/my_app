@@ -41,6 +41,15 @@ class HistoryScreen extends StatelessWidget {
                             style: const TextStyle(fontSize: 17),
                           ),
                           subtitle: Text(h.timestamp),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              Provider.of<HistoryProvider>(
+                                context,
+                                listen: false,
+                              ).removeHistory(h);
+                            },
+                          ),
                         ),
                       );
                     },
