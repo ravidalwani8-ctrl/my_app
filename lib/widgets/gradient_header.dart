@@ -9,9 +9,15 @@ class GradientHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 45, bottom: 25, left: 16, right: 16),
+      padding: EdgeInsets.only(
+        top: topInset + 10,
+        bottom: 20,
+        left: 16,
+        right: 16,
+      ),
       decoration: const BoxDecoration(
         gradient: AppTheme.mainGradient,
         borderRadius: BorderRadius.only(
@@ -33,9 +39,9 @@ class GradientHeader extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 26,
+                fontSize: 24,
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),

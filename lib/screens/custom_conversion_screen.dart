@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../utils/decimal_text_input_formatter.dart';
 import 'package:provider/provider.dart';
 import '../widgets/gradient_header.dart';
@@ -8,6 +7,7 @@ import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
 import '../models/favorite_item.dart';
 import '../models/history_item.dart';
+import '../utils/number_formatter.dart';
 
 class CustomConversionScreen extends StatefulWidget {
   const CustomConversionScreen({super.key});
@@ -30,8 +30,9 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
     }
 
     try {
-      final v = double.parse(value);
-      final r = double.parse(rate); // 1 A = r B
+      final v = parseScientificInput(value, allowNegative: false) ?? 0;
+      final r =
+          parseScientificInput(rate, allowNegative: false) ?? 0; // 1 A = r B
       setState(() => result = v * r);
     } catch (_) {
       setState(() => result = 0);
@@ -40,33 +41,46 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
 
   /// SAVE FAVORITE
   void saveFavorite() {
-    if (unitA.isEmpty || unitB.isEmpty || rate.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Enter units & rate first")));
+    if (unitA.isEmpty || unitB.isEmpty || rate.isEmpty || value.isEmpty) {
+      _showSnack("Enter units, rate and value first");
       return;
     }
 
+    final inputValue = parseScientificInput(value, allowNegative: false);
+    final rateValue = parseScientificInput(rate, allowNegative: false) ?? 0;
+    if (inputValue == null) {
+      _showSnack("Enter a valid value");
+      return;
+    }
     Provider.of<FavoritesProvider>(context, listen: false).addFavorite(
       FavoriteItem(
+        inputValue: inputValue,
+        resultValue: inputValue * rateValue,
+        rateUsed: rateValue,
         category: "Custom",
         fromUnit: unitA,
         toUnit: unitB,
-        sampleConversion: "1 $unitA = $rate $unitB",
+        timestamp: DateTime.now(),
       ),
     );
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Added to Favorites")));
+    _showSnack("Added to Favorites");
   }
 
   /// SAVE HISTORY
   void saveHistory() {
     if (unitA.isEmpty || unitB.isEmpty || value.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Enter all details first")));
+      _showSnack("Enter all details first");
+      return;
+    }
+    final inputValue = parseScientificInput(value, allowNegative: false);
+    final rateValue = parseScientificInput(rate, allowNegative: false);
+    if (inputValue == null) {
+      _showSnack("Enter a valid value");
+      return;
+    }
+    if (rateValue == null) {
+      _showSnack("Enter a valid rate");
       return;
     }
 
@@ -75,15 +89,23 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
         category: "Custom",
         fromUnit: unitA,
         toUnit: unitB,
-        inputValue: value,
-        result: result.toString(),
-        timestamp: DateTime.now().toString(),
+        inputValue: formatNumberWithScientific(inputValue),
+        result: formatNumberWithScientific(result),
+        timestamp: formatTimestampToMinute(DateTime.now()),
+        rateUsed: formatNumberWithScientific(rateValue),
       ),
     );
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Saved to History")));
+    _showSnack("Saved to History");
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
+      ),
+    );
   }
 
   @override
@@ -95,7 +117,7 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               children: [
                 // UNIT A
                 TextField(
@@ -107,7 +129,7 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                   onChanged: (v) => setState(() => unitA = v),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // UNIT B
                 TextField(
@@ -119,14 +141,14 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                   onChanged: (v) => setState(() => unitB = v),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 const Text(
                   "💡 Example: If 1 Mango = 2 Apples → Enter 2 below.",
                   style: TextStyle(fontSize: 15, color: Colors.grey),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 // RATE
                 TextField(
@@ -137,8 +159,10 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                     border: const OutlineInputBorder(),
                   ),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
-                    DecimalTextInputFormatter(decimalRange: 6),
+                    DecimalTextInputFormatter(
+                      decimalRange: 6,
+                      allowScientific: true,
+                    ),
                   ],
                   onChanged: (v) {
                     rate = v;
@@ -146,7 +170,7 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 // VALUE
                 TextField(
@@ -156,8 +180,10 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                     border: const OutlineInputBorder(),
                   ),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
-                    DecimalTextInputFormatter(decimalRange: 6),
+                    DecimalTextInputFormatter(
+                      decimalRange: 6,
+                      allowScientific: true,
+                    ),
                   ],
                   onChanged: (v) {
                     value = v;
@@ -165,12 +191,15 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 // RESULT BOX
-                ResultBox(label: "Converted Value", value: "$result $unitB"),
+                ResultBox(
+                  label: "Converted Value",
+                  value: "${formatNumberWithScientific(result)} $unitB",
+                ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // ACTION BUTTONS
                 Row(

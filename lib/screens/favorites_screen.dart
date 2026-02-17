@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/gradient_header.dart';
+import '../utils/number_formatter.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -25,26 +26,40 @@ class FavoritesScreen extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                     itemCount: favs.length,
-                    itemBuilder: (context, i) {
-                      final f = favs[i];
+                    itemBuilder: (context, index) {
+                      final item = favs[index];
 
                       return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
-                          leading: const Icon(
-                            Icons.favorite,
-                            color: Colors.red,
+                          title: Text(item.category),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "${formatNumberWithScientific(item.inputValue)} ${item.fromUnit} = ${formatNumberWithScientific(item.resultValue)} ${item.toUnit}",
+                              ),
+                              if (item.category == "Currency" &&
+                                  item.rateUsed != null)
+                                Text(
+                                  "Rate used = ${formatNumberWithScientific(item.rateUsed!)}",
+                                ),
+                              if (item.category == "Custom" &&
+                                  item.rateUsed != null)
+                                Text(
+                                  "Conversion rate: 1 ${item.fromUnit} = ${formatNumberWithScientific(item.rateUsed!)} ${item.toUnit}",
+                                ),
+                            ],
                           ),
-                          title: Text(
-                            "${f.fromUnit} → ${f.toUnit}",
-                            style: const TextStyle(fontSize: 17),
-                          ),
-                          subtitle: Text(f.sampleConversion),
                           trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete),
                             onPressed: () {
-                              favProvider.removeFavorite(f);
+                              context.read<FavoritesProvider>().removeFavorite(
+                                item,
+                              );
                             },
                           ),
                         ),

@@ -24,7 +24,7 @@ class HistoryScreen extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                     itemCount: history.length,
                     itemBuilder: (context, i) {
                       final h = history[i];
@@ -40,7 +40,20 @@ class HistoryScreen extends StatelessWidget {
                             "${h.inputValue} ${h.fromUnit} → ${h.result} ${h.toUnit}",
                             style: const TextStyle(fontSize: 17),
                           ),
-                          subtitle: Text(h.timestamp),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(h.timestamp),
+                              if (h.category == "Currency" &&
+                                  h.rateUsed != null)
+                                Text("Rate used = ${h.rateUsed!}"),
+                              if (h.category == "Custom" && h.rateUsed != null)
+                                Text(
+                                  "Conversion rate: 1 ${h.fromUnit} = ${h.rateUsed!} ${h.toUnit}",
+                                ),
+                            ],
+                          ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {

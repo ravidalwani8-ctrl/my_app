@@ -10,13 +10,13 @@ class ResultBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(top: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 3,
+      margin: const EdgeInsets.only(top: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           gradient: AppTheme.mainGradient, // Matches global theme
         ),
         child: Column(
@@ -27,8 +27,8 @@ class ResultBox extends StatelessWidget {
               label,
               style: const TextStyle(
                 color: Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
             ),
 
@@ -39,8 +39,8 @@ class ResultBox extends StatelessWidget {
               value,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],

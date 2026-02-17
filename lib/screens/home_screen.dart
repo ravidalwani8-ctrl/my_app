@@ -69,8 +69,15 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 40, color: color),
-              const SizedBox(height: 10),
-              Text(title, style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
@@ -87,7 +94,7 @@ class HomeScreen extends StatelessWidget {
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               children: [
                 /// ----------------------------------------------------
                 /// 1) TEMPERATURE (FIRST)
@@ -122,7 +129,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 /// ----------------------------------------------------
                 /// 2) CURRENCY (SECOND)
@@ -162,7 +169,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 /// ----------------------------------------------------
                 /// 3) MAIN CATEGORIES (Length, Weight, Area, etc.)
@@ -200,7 +207,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 /// ----------------------------------------------------
                 /// 4) CUSTOM CONVERTER
@@ -235,7 +242,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 /// ----------------------------------------------------
                 /// 6) 2×2 GRID: Tips, Favorites, History, Settings

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/decimal_text_input_formatter.dart';
-import 'package:flutter/services.dart';
 import '../widgets/gradient_header.dart';
 import '../widgets/result_box.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
 import '../models/favorite_item.dart';
 import '../models/history_item.dart';
+import '../utils/number_formatter.dart';
 
 class CurrencyScreen extends StatefulWidget {
   const CurrencyScreen({super.key});
@@ -38,33 +38,40 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
   /// SAVE FAVORITE
   void saveFavorite() {
-    if (rateInput.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter conversion rate first")),
-      );
+    if (amount.isEmpty || rateInput.isEmpty) {
+      _showSnack("Enter amount and rate first");
       return;
     }
 
+    final amountValue = parseScientificInput(amount, allowNegative: false);
+    final rate = parseScientificInput(rateInput, allowNegative: false) ?? 0;
+    if (amountValue == null) {
+      _showSnack("Enter a valid amount");
+      return;
+    }
     Provider.of<FavoritesProvider>(context, listen: false).addFavorite(
       FavoriteItem(
+        inputValue: amountValue,
+        resultValue: amountValue * rate,
+        rateUsed: rate,
         category: "Currency",
         fromUnit: from,
         toUnit: to,
-        sampleConversion: "1 $from = $rateInput $to",
+        timestamp: DateTime.now(),
       ),
     );
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Added to Favorites")));
+    _showSnack("Added to Favorites");
   }
 
   /// SAVE HISTORY
   void saveHistory() {
     if (amount.isEmpty || rateInput.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter amount and rate first")),
-      );
+      _showSnack("Enter amount and rate first");
+      return;
+    }
+    final amountValue = parseScientificInput(amount, allowNegative: false);
+    if (amountValue == null) {
+      _showSnack("Enter a valid amount");
       return;
     }
 
@@ -73,15 +80,24 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
         category: "Currency",
         fromUnit: from,
         toUnit: to,
-        inputValue: amount,
-        result: result.toString(),
-        timestamp: DateTime.now().toString(),
+        inputValue: formatNumberWithScientific(amountValue),
+        result: formatNumberWithScientific(result),
+        timestamp: formatTimestampToMinute(DateTime.now()),
+        rateUsed: formatNumberWithScientific(
+          parseScientificInput(rateInput, allowNegative: false) ?? 0,
+        ),
       ),
     );
+    _showSnack("Saved to History");
+  }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Saved to History")));
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
+      ),
+    );
   }
 
   /// Numeric-only calculation
@@ -92,8 +108,8 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     }
 
     try {
-      final amt = double.parse(amount);
-      final rate = double.parse(rateInput);
+      final amt = parseScientificInput(amount, allowNegative: false) ?? 0;
+      final rate = parseScientificInput(rateInput, allowNegative: false) ?? 0;
       setState(() => result = amt * rate);
     } catch (_) {
       setState(() => result = 0);
@@ -109,7 +125,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               child: ListView(
                 children: [
                   Text(
@@ -127,8 +143,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       border: OutlineInputBorder(),
                     ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
-                      DecimalTextInputFormatter(decimalRange: 6),
+                      DecimalTextInputFormatter(
+                        decimalRange: 6,
+                        allowScientific: true,
+                      ),
                     ],
                     onChanged: (v) {
                       amount = v;
@@ -159,7 +177,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // SWAP BUTTON
                   Center(
@@ -173,7 +191,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // TO CURRENCY
                   DropdownButtonFormField<String>(
@@ -211,8 +229,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       border: OutlineInputBorder(),
                     ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
-                      DecimalTextInputFormatter(decimalRange: 6),
+                      DecimalTextInputFormatter(
+                        decimalRange: 6,
+                        allowScientific: true,
+                      ),
                     ],
                     onChanged: (v) {
                       rateInput = v;
@@ -220,12 +240,15 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 12),
 
                   // RESULT BOX
-                  ResultBox(label: "Converted Amount", value: "$result $to"),
+                  ResultBox(
+                    label: "Converted Amount",
+                    value: "${formatNumberWithScientific(result)} $to",
+                  ),
 
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 12),
 
                   // ACTION BUTTONS
                   Row(

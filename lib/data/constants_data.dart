@@ -1,3 +1,4 @@
+
 class ScientificConstant {
   final String name;
   final String symbol;
@@ -27,4 +28,21 @@ const List<ScientificConstant> scientificConstants = [
     symbol: "Nᴀ",
     value: "6.022 × 10²³",
   ),
+  ScientificConstant(name: "Earth Gravity", symbol: "g", value: "9.8 m/s²"),
+  ScientificConstant(
+    name: "Boltzmann Constant",
+    symbol: "k",
+    value: "1.381 × 10⁻²³ J/K",
+  ),
+  ScientificConstant(
+    name: "Gas Constant",
+    symbol: "R",
+    value: "8.314 J/(mol·K)",
+  ),
+  ScientificConstant(
+    name: "Avogadro's Number",
+    symbol: "Nₐ",
+    value: "6.022 × 10²³ mol⁻¹",
+  ),
+  ScientificConstant(name: "Pi", symbol: "π", value: "3.14159"),
 ];

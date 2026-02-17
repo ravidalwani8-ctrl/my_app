@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../widgets/gradient_header.dart';
 import '../widgets/result_box.dart';
@@ -8,6 +7,7 @@ import '../providers/favorites_provider.dart';
 import '../providers/history_provider.dart';
 import '../models/favorite_item.dart';
 import '../models/history_item.dart';
+import '../utils/number_formatter.dart';
 
 class TemperatureScreen extends StatefulWidget {
   const TemperatureScreen({super.key});
@@ -42,7 +42,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
       return;
     }
 
-    double value = double.tryParse(input) ?? 0;
+    final value = parseScientificInput(input, allowNegative: true) ?? 0;
     final toC = _toCelsius[from] ?? (v) => v;
     final fromC = _fromCelsius[to] ?? (v) => v;
     final celsius = toC(value);
@@ -62,26 +62,39 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
 
   /// SAVE FAVORITE
   void saveFavorite() {
+    if (input.isEmpty) {
+      _showSnack("Enter value first");
+      return;
+    }
+    final inputValue = parseScientificInput(input, allowNegative: true);
+    if (inputValue == null) {
+      _showSnack("Enter a valid number");
+      return;
+    }
+
+    // Calculate proper conversion for 1 unit
     Provider.of<FavoritesProvider>(context, listen: false).addFavorite(
       FavoriteItem(
+        inputValue: inputValue,
+        resultValue: result,
         category: "Temperature",
         fromUnit: from,
         toUnit: to,
-        sampleConversion: "1 $from = ${result.toStringAsFixed(2)} $to",
+        timestamp: DateTime.now(),
       ),
     );
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Added to Favorites")));
+    _showSnack("Added to Favorites");
   }
 
   /// SAVE HISTORY
   void saveHistory() {
     if (input.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Enter value first")));
+      _showSnack("Enter value first");
+      return;
+    }
+    final inputValue = parseScientificInput(input, allowNegative: true);
+    if (inputValue == null) {
+      _showSnack("Enter a valid number");
       return;
     }
 
@@ -90,15 +103,21 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
         category: "Temperature",
         fromUnit: from,
         toUnit: to,
-        inputValue: input,
-        result: result.toString(),
-        timestamp: DateTime.now().toString(),
+        inputValue: formatNumberWithScientific(inputValue),
+        result: formatNumberWithScientific(result),
+        timestamp: formatTimestampToMinute(DateTime.now()),
       ),
     );
+    _showSnack("Saved to History");
+  }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Saved to History")));
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
+      ),
+    );
   }
 
   @override
@@ -110,7 +129,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               child: ListView(
                 children: [
                   // LABEL
@@ -128,8 +147,11 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                       border: OutlineInputBorder(),
                     ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
-                      DecimalTextInputFormatter(decimalRange: 6),
+                      DecimalTextInputFormatter(
+                        decimalRange: 6,
+                        allowNegative: true,
+                        allowScientific: true,
+                      ),
                     ],
                     onChanged: (v) {
                       input = v;
@@ -160,7 +182,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // SWAP BUTTON (added)
                   Center(
@@ -174,7 +196,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // TO UNIT
                   DropdownButtonFormField<String>(
@@ -197,20 +219,20 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
 
                   // RESULT BOX (same style as other screens)
                   ResultBox(
                     label: "Converted Temperature",
-                    value: "$result $to",
+                    value: "${formatNumberWithScientific(result)} $to",
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 12),
                   const Text(
                     "💡 Tip: formula Fahrenheit = (celsius * 9/5) + 32",
                     style: TextStyle(fontSize: 15, color: Colors.grey),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 12),
                   // ACTION BUTTONS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,

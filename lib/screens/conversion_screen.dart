@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/decimal_text_input_formatter.dart';
-import 'package:flutter/services.dart';
 import '../models/category.dart';
 import '../models/unit.dart';
 import '../providers/history_provider.dart';
@@ -10,6 +9,7 @@ import '../models/history_item.dart';
 import '../models/favorite_item.dart';
 import '../widgets/gradient_header.dart';
 import '../widgets/result_box.dart';
+import '../utils/number_formatter.dart';
 
 class ConversionScreen extends StatefulWidget {
   final Category category;
@@ -50,7 +50,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
       return;
     }
 
-    double value = double.tryParse(input) ?? 0;
+    final value = parseScientificInput(input, allowNegative: false) ?? 0;
     // Map-based conversion using unit name -> factor map
     final fromFactor = unitMap[fromUnit.name] ?? fromUnit.factor;
     final toFactor = unitMap[toUnit.name] ?? toUnit.factor;
@@ -72,35 +72,81 @@ class _ConversionScreenState extends State<ConversionScreen> {
   }
 
   void saveFavorite() {
+    if (input.isEmpty) {
+      _showSnack("Enter value first");
+      return;
+    }
+    final inputValue = parseScientificInput(input, allowNegative: false);
+    if (inputValue == null) {
+      _showSnack("Enter a valid number");
+      return;
+    }
+
     Provider.of<FavoritesProvider>(context, listen: false).addFavorite(
       FavoriteItem(
+        inputValue: inputValue,
+        resultValue: result,
         category: widget.category.name,
         fromUnit: fromUnit.name,
         toUnit: toUnit.name,
-        sampleConversion:
-            "1 ${fromUnit.name} = ${_formatNumber(fromUnit.factor / toUnit.factor)} ${toUnit.name}",
+        timestamp: DateTime.now(),
       ),
     );
+    _showSnack("Added to Favorites");
   }
 
   void saveHistory() {
+    if (input.isEmpty) {
+      _showSnack("Enter value first");
+      return;
+    }
+    final inputValue = parseScientificInput(input, allowNegative: false);
+    if (inputValue == null) {
+      _showSnack("Enter a valid number");
+      return;
+    }
+
     Provider.of<HistoryProvider>(context, listen: false).addHistory(
       HistoryItem(
         category: widget.category.name,
         fromUnit: fromUnit.name,
         toUnit: toUnit.name,
-        inputValue: input,
-        result: _formatNumber(result),
-        timestamp: DateTime.now().toString(),
+        inputValue: formatNumberWithScientific(inputValue),
+        result: formatNumberWithScientific(result),
+        timestamp: formatTimestampToMinute(DateTime.now()),
+      ),
+    );
+    _showSnack("Saved to History");
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
       ),
     );
   }
 
-  String _formatNumber(double v) {
-    if (v.isInfinite || v.isNaN) return "0";
-    if (v == v.roundToDouble()) return v.toInt().toString();
-    String s = v.toStringAsFixed(6);
-    return s.replaceFirst(RegExp(r"\.?0+"), "");
+  String _categoryTip(String categoryName) {
+    switch (categoryName) {
+      case "Length":
+        return "💡 Tip: 1 inch = 2.54 cm";
+      case "Weight":
+        return "💡 Tip: 1 kg = 2.20462 lb";
+      case "Time":
+        return "💡 Tip: 1 hour = 60 minutes";
+      case "Energy":
+        return "💡 Tip: 1 kWh = 3.6 × 10^6 J";
+      case "Speed":
+        return "💡 Tip: 1 m/s = 3.6 km/h";
+      case "Pressure":
+        return "💡 Tip: 1 bar = 14.5038 psi";
+      case "Data":
+        return "💡 Tip: 1 KB = 1024 Bytes";
+      default:
+        return "💡 Tip: Select units first, then enter value.";
+    }
   }
 
   @override
@@ -112,7 +158,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               children: [
                 // LABEL
                 Text(
@@ -130,8 +176,10 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   ),
                   controller: _controller,
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]')),
-                    DecimalTextInputFormatter(decimalRange: 6),
+                    DecimalTextInputFormatter(
+                      decimalRange: 6,
+                      allowScientific: true,
+                    ),
                   ],
                   autofocus: true,
                   onChanged: (v) {
@@ -140,7 +188,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // FROM UNIT
                 DropdownButtonFormField<Unit>(
@@ -161,7 +209,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 // SWITCH BUTTON
                 Center(
@@ -175,7 +223,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 // TO UNIT
                 DropdownButtonFormField<Unit>(
@@ -196,23 +244,23 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 12),
 
                 // RESULT BOX
                 ResultBox(
                   label: "Result",
-                  value: "${_formatNumber(result)} ${toUnit.name}",
+                  value: "${formatNumberWithScientific(result)} ${toUnit.name}",
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // TIPS
-                const Text(
-                  "💡 Tip: 1 m/sec= 3.6 Km/hr, 1 bar = 14.5038 psi, 1 inch = 2.54 cm, 1 KB = 1024 Bytes.",
+                Text(
+                  _categoryTip(widget.category.name),
                   style: TextStyle(fontSize: 15, color: Colors.grey),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // ACTION BUTTONS
                 Row(
