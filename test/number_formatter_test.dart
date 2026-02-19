@@ -15,6 +15,15 @@ void main() {
     expect(value, 1000);
   });
 
+  test('flags extremely small scientific inputs as out of range', () {
+    final value1 = parseScientificInput('1×10^-333');
+    final value2 = parseScientificInput('1e-1000');
+    expect(value1, isNotNull);
+    expect(value1!.isNaN, isTrue);
+    expect(value2, isNotNull);
+    expect(value2!.isNaN, isTrue);
+  });
+
   test('uses plain formatting when value fits in 10 characters', () {
     expect(formatNumberWithScientific(1234567890), '1234567890');
     expect(formatNumberWithScientific(12345.6789), '12345.6789');

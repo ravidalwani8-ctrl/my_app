@@ -78,6 +78,9 @@ double? parseScientificInput(String raw, {bool allowNegative = true}) {
     final mantissa = double.tryParse(parts[0]);
     final exponent = double.tryParse(parts[1]);
     if (mantissa == null || exponent == null) return null;
+    if (mantissa == 0) return 0;
+    final log10Abs = math.log(mantissa.abs()) / math.ln10 + exponent;
+    if (log10Abs < -323 || log10Abs > 308) return double.nan;
     final value = mantissa * math.pow(10, exponent).toDouble();
     if (!allowNegative && value < 0) return null;
     return value;
@@ -104,6 +107,10 @@ double? parseScientificInput(String raw, {bool allowNegative = true}) {
         : double.tryParse(coefficientText);
     final exponent = double.tryParse(exponentText);
     if (coefficient == null || exponent == null) return null;
+    if (coefficient == 0) return 0;
+    final log10Abs =
+        math.log(coefficient.abs()) / math.ln10 + exponent * math.log(math.e) / math.ln10;
+    if (log10Abs < -323 || log10Abs > 308) return double.nan;
     final value = coefficient * math.pow(math.e, exponent).toDouble();
     if (!allowNegative && value < 0) return null;
     return value;
@@ -116,6 +123,7 @@ double? parseScientificInput(String raw, {bool allowNegative = true}) {
         ? 1.0
         : double.tryParse(coefficientText);
     if (coefficient == null) return null;
+    if (coefficient == 0) return 0;
     final value = coefficient * math.e;
     if (!allowNegative && value < 0) return null;
     return value;
