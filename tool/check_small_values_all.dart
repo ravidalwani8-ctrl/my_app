@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:my_app/utils/number_formatter.dart';
+import 'package:unit_converter/utils/number_formatter.dart';
 
 void main() {
   stdout.writeln('--- Conversion (Data: Byte -> Terabyte) ---');

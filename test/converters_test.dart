@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_app/utils/converters.dart';
+import 'package:unit_converter/utils/converters.dart';
 
 void main() {
   group('Converters.toCelsius', () {

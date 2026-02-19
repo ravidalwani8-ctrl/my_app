@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_app/utils/number_formatter.dart';
+import 'package:unit_converter/utils/number_formatter.dart';
 
 void main() {
   test('parses e-notation as base e', () {

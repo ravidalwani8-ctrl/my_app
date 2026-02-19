@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_app/models/history_item.dart';
-import 'package:my_app/providers/history_provider.dart';
+import 'package:unit_converter/models/history_item.dart';
+import 'package:unit_converter/providers/history_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

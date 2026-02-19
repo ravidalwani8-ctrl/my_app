@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:my_app/screens/temperature_screen.dart';
-import 'package:my_app/providers/favorites_provider.dart';
-import 'package:my_app/providers/history_provider.dart';
+import 'package:unit_converter/screens/temperature_screen.dart';
+import 'package:unit_converter/providers/favorites_provider.dart';
+import 'package:unit_converter/providers/history_provider.dart';
 
 void main() {
   setUp(() {
