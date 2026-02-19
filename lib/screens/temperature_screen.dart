@@ -8,6 +8,7 @@ import '../providers/history_provider.dart';
 import '../models/favorite_item.dart';
 import '../models/history_item.dart';
 import '../utils/number_formatter.dart';
+import '../utils/converters.dart';
 
 class TemperatureScreen extends StatefulWidget {
   const TemperatureScreen({super.key});
@@ -21,20 +22,29 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
   String to = "Fahrenheit";
   String input = "";
   double result = 0;
+  late TextEditingController _inputController;
 
   final List<String> units = ["Celsius", "Fahrenheit", "Kelvin"];
 
-  final Map<String, double Function(double)> _toCelsius = {
-    'Celsius': (v) => v,
-    'Fahrenheit': (v) => (v - 32) * 5 / 9,
-    'Kelvin': (v) => v - 273.15,
-  };
+  final List<(String label, String from, String to, String value)>
+  _presets = [
+    ("Boiling Point", "Celsius", "Fahrenheit", "100"),
+    ("Freezing Point", "Celsius", "Fahrenheit", "0"),
+    ("Room Temp", "Celsius", "Fahrenheit", "25"),
+    ("Absolute Zero", "Celsius", "Kelvin", "-273.15"),
+  ];
 
-  final Map<String, double Function(double)> _fromCelsius = {
-    'Celsius': (v) => v,
-    'Fahrenheit': (v) => (v * 9 / 5) + 32,
-    'Kelvin': (v) => v + 273.15,
-  };
+  @override
+  void initState() {
+    super.initState();
+    _inputController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _inputController.dispose();
+    super.dispose();
+  }
 
   void convert() {
     if (input.isEmpty) {
@@ -43,10 +53,8 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
     }
 
     final value = parseScientificInput(input, allowNegative: true) ?? 0;
-    final toC = _toCelsius[from] ?? (v) => v;
-    final fromC = _fromCelsius[to] ?? (v) => v;
-    final celsius = toC(value);
-    result = fromC(celsius);
+    final celsius = Converters.toCelsius(from, value);
+    result = Converters.fromCelsius(to, celsius);
     setState(() {});
   }
 
@@ -60,6 +68,19 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
     convert();
   }
 
+  void _applyPreset((String label, String from, String to, String value) p) {
+    setState(() {
+      from = p.$2;
+      to = p.$3;
+      input = p.$4;
+      _inputController.text = p.$4;
+      _inputController.selection = TextSelection.collapsed(
+        offset: _inputController.text.length,
+      );
+    });
+    convert();
+  }
+
   /// SAVE FAVORITE
   void saveFavorite() {
     if (input.isEmpty) {
@@ -69,6 +90,10 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
     final inputValue = parseScientificInput(input, allowNegative: true);
     if (inputValue == null) {
       _showSnack("Enter a valid number");
+      return;
+    }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
       return;
     }
 
@@ -97,6 +122,10 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
       _showSnack("Enter a valid number");
       return;
     }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
+      return;
+    }
 
     Provider.of<HistoryProvider>(context, listen: false).addHistory(
       HistoryItem(
@@ -120,6 +149,26 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
     );
   }
 
+  String? get _validationError {
+    if (input.isEmpty) return null;
+    final parsed = parseScientificInput(input, allowNegative: true);
+    if (parsed == null) {
+      return "Please enter a valid temperature value.";
+    }
+    if (!result.isFinite) {
+      return "Result is out of range. Try a smaller value.";
+    }
+    return null;
+  }
+
+
+  bool get _canSave {
+    if (input.isEmpty) return false;
+    if (parseScientificInput(input, allowNegative: true) == null) return false;
+    if (!result.isFinite) return false;
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,15 +178,30 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
               child: ListView(
                 children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _presets
+                        .map(
+                          (p) => ActionChip(
+                            label: Text(p.$1),
+                            onPressed: () => _applyPreset(p),
+                          ),
+                        )
+                        .toList(),
+                  ),
+
+                  const SizedBox(height: 16),
+
                   // LABEL
                   Text(
                     "Enter Temp. to convert",
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // INPUT VALUE
                   TextField(
@@ -146,6 +210,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                       labelText: "Enter value",
                       border: OutlineInputBorder(),
                     ),
+                    controller: _inputController,
                     inputFormatters: [
                       DecimalTextInputFormatter(
                         decimalRange: 6,
@@ -159,7 +224,15 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                if (_validationError != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _validationError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ],
+
+                  const SizedBox(height: 16),
 
                   // FROM UNIT
                   DropdownButtonFormField<String>(
@@ -182,7 +255,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // SWAP BUTTON (added)
                   Center(
@@ -196,7 +269,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // TO UNIT
                   DropdownButtonFormField<String>(
@@ -219,20 +292,20 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // RESULT BOX (same style as other screens)
                   ResultBox(
                     label: "Converted Temperature",
                     value: "${formatNumberWithScientific(result)} $to",
+                    canCopy:
+                        input.isNotEmpty &&
+                        parseScientificInput(input, allowNegative: true) !=
+                            null &&
+                        result.isFinite,
                   ),
 
-                  const SizedBox(height: 12),
-                  const Text(
-                    "💡 Tip: formula Fahrenheit = (celsius * 9/5) + 32",
-                    style: TextStyle(fontSize: 15, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   // ACTION BUTTONS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -240,12 +313,12 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.favorite_border),
                         label: const Text("Favorite"),
-                        onPressed: saveFavorite,
+                        onPressed: _canSave ? saveFavorite : null,
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.save_alt),
                         label: const Text("Save to History"),
-                        onPressed: saveHistory,
+                        onPressed: _canSave ? saveHistory : null,
                       ),
                     ],
                   ),

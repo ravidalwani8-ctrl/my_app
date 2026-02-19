@@ -1,7 +1,11 @@
 import 'dart:math' as math;
 
 String _trimNumber(String value) {
-  return value.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+  final trimmed = value
+      .replaceAll(RegExp(r'0+$'), '')
+      .replaceAll(RegExp(r'\.$'), '');
+  if (trimmed.isEmpty || trimmed == '-') return '0';
+  return trimmed;
 }
 
 String _toBase10Scientific(double value, {int mantissaDecimals = 3}) {
@@ -16,17 +20,36 @@ String _toBase10Scientific(double value, {int mantissaDecimals = 3}) {
 /// otherwise falls back to base-10 scientific notation.
 String formatNumberWithScientific(
   double value, {
-  int maxChars = 6,
-  int decimals = 6,
+  int maxChars = 10,
+  int decimals = 10,
 }) {
-  if (value.isNaN || value.isInfinite) return "0";
+  if (value.isNaN || value.isInfinite) return "Error: out of range";
   if (value == 0) return "0";
 
-  final plain = _trimNumber(value.toStringAsFixed(decimals));
-  final withoutSign = plain.startsWith('-') ? plain.substring(1) : plain;
-  if (withoutSign.length <= maxChars) {
-    return plain;
+  // Try the most precise plain representation that still fits.
+  for (int currentDecimals = decimals; currentDecimals >= 0; currentDecimals--) {
+    final plain = _trimNumber(value.toStringAsFixed(currentDecimals));
+
+    // toStringAsFixed can switch to exponential style for very large values.
+    if (plain.contains('e') || plain.contains('E')) {
+      continue;
+    }
+
+    final normalizedPlain = plain == '-0' ? '0' : plain;
+
+    // Do not collapse non-zero values to 0; use scientific in that case.
+    if (normalizedPlain == '0') {
+      continue;
+    }
+
+    final withoutSign = normalizedPlain.startsWith('-')
+        ? normalizedPlain.substring(1)
+        : normalizedPlain;
+    if (withoutSign.length <= maxChars) {
+      return normalizedPlain;
+    }
   }
+
   return _toBase10Scientific(value);
 }
 

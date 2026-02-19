@@ -56,7 +56,7 @@ class HelpScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             ...points.map(
               (line) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -77,7 +77,7 @@ class HelpScreen extends StatelessWidget {
           const GradientHeader(title: "Help & Usage", showBack: true),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
               children: [
                 _section(
                   context,

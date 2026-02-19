@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/theme_provider.dart';
 import '../providers/history_provider.dart';
 import '../providers/favorites_provider.dart';
+import '../models/history_item.dart';
+import '../models/favorite_item.dart';
 import '../widgets/gradient_header.dart';
 import 'help_screen.dart';
 
@@ -103,11 +105,11 @@ class SettingsScreen extends StatelessWidget {
           const GradientHeader(title: "Settings", showBack: true),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(0, 14, 0, 16),
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
               children: [
                 /// APPEARANCE SECTION
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Text(
                     "Appearance",
                     style: TextStyle(
@@ -119,7 +121,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 SwitchListTile(
                   title: const Text("Dark Mode"),
-                  secondary: const Icon(Icons.dark_mode),
+                  secondary: const Icon(Icons.dark_mode, color: Colors.indigo),
                   value: themeProvider.isDark,
                   onChanged: (v) => themeProvider.toggle(),
                 ),
@@ -127,7 +129,7 @@ class SettingsScreen extends StatelessWidget {
 
                 /// DATA MANAGEMENT SECTION
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
                   child: Text(
                     "Data Management",
                     style: TextStyle(
@@ -138,7 +140,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.delete),
+                  leading: const Icon(Icons.delete, color: Colors.redAccent),
                   title: const Text("Clear History"),
                   subtitle: Text(
                     "${historyProvider.history.length} items",
@@ -158,14 +160,29 @@ class SettingsScreen extends StatelessWidget {
                             child: const Text("Cancel"),
                           ),
                           TextButton(
-                            onPressed: () {
-                              historyProvider.clearHistory();
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("History cleared"),
-                                ),
+                            onPressed: () async {
+                              final snapshot = List<HistoryItem>.from(
+                                historyProvider.history,
                               );
+                              await historyProvider.clearHistory();
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text("History cleared"),
+                                    duration: const Duration(seconds: 4),
+                                    action: SnackBarAction(
+                                      label: "UNDO",
+                                      onPressed: () {
+                                        historyProvider.restoreAllHistory(
+                                          snapshot,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.red,
@@ -178,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.delete_sweep),
+                  leading: const Icon(Icons.delete_sweep, color: Colors.red),
                   title: const Text("Clear Favorites"),
                   subtitle: Text(
                     "${favoritesProvider.favorites.length} items",
@@ -198,14 +215,29 @@ class SettingsScreen extends StatelessWidget {
                             child: const Text("Cancel"),
                           ),
                           TextButton(
-                            onPressed: () {
-                              favoritesProvider.clearFavorites();
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Favorites cleared"),
-                                ),
+                            onPressed: () async {
+                              final snapshot = List<FavoriteItem>.from(
+                                favoritesProvider.favorites,
                               );
+                              await favoritesProvider.clearFavorites();
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text("Favorites cleared"),
+                                    duration: const Duration(seconds: 4),
+                                    action: SnackBarAction(
+                                      label: "UNDO",
+                                      onPressed: () {
+                                        favoritesProvider.restoreAllFavorites(
+                                          snapshot,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.red,
@@ -221,7 +253,7 @@ class SettingsScreen extends StatelessWidget {
 
                 /// ABOUT & SUPPORT SECTION
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
                   child: Text(
                     "About & Support",
                     style: TextStyle(
@@ -232,7 +264,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.help_outline),
+                  leading: const Icon(Icons.help_outline, color: Colors.teal),
                   title: const Text("Help & Usage"),
                   onTap: () {
                     Navigator.push(
@@ -242,36 +274,36 @@ class SettingsScreen extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.info),
+                  leading: const Icon(Icons.info, color: Colors.blue),
                   title: const Text("About App"),
                   onTap: () => _showAboutDialog(context),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.privacy_tip),
+                  leading: const Icon(Icons.privacy_tip, color: Colors.indigo),
                   title: const Text("Privacy Policy"),
                   onTap: () => _launchURL('https://smartconverter.com/privacy'),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.description),
+                  leading: const Icon(Icons.description, color: Colors.deepPurple),
                   title: const Text("Terms of Service"),
                   onTap: () => _launchURL('https://smartconverter.com/terms'),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.code),
+                  leading: const Icon(Icons.code, color: Colors.black54),
                   title: const Text("GitHub Repository"),
                   onTap: () => _launchURL(
                     'https://github.com/smartconverter/smart-converter',
                   ),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.star),
+                  leading: const Icon(Icons.star, color: Colors.amber),
                   title: const Text("Rate App"),
                   onTap: () => _launchURL(
                     'https://play.google.com/store/apps/details?id=com.smartconverter',
                   ),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.email),
+                  leading: const Icon(Icons.email, color: Colors.lightBlue),
                   title: const Text("Send Feedback"),
                   onTap: () => _launchURL(
                     'mailto:support@smartconverter.com?subject=Smart%20Converter%20Feedback',

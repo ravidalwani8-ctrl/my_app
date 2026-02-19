@@ -24,13 +24,13 @@ class HistoryScreen extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                     itemCount: history.length,
                     itemBuilder: (context, i) {
                       final h = history[i];
 
                       return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: 14),
                         child: ListTile(
                           leading: const Icon(
                             Icons.history,
@@ -56,11 +56,34 @@ class HistoryScreen extends StatelessWidget {
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              Provider.of<HistoryProvider>(
+                            onPressed: () async {
+                              final provider = Provider.of<HistoryProvider>(
                                 context,
                                 listen: false,
-                              ).removeHistory(h);
+                              );
+                              final removedItem = h;
+                              final removedIndex = i;
+
+                              await provider.removeHistory(removedItem);
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text("History item removed"),
+                                    duration: const Duration(seconds: 3),
+                                    action: SnackBarAction(
+                                      label: "UNDO",
+                                      onPressed: () {
+                                        provider.insertHistoryAt(
+                                          removedIndex,
+                                          removedItem,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
                             },
                           ),
                         ),

@@ -15,9 +15,25 @@ void main() {
     expect(value, 1000);
   });
 
-  test('formats large values using 10^ style, not e style', () {
-    final text = formatNumberWithScientific(1234567);
+  test('uses plain formatting when value fits in 10 characters', () {
+    expect(formatNumberWithScientific(1234567890), '1234567890');
+    expect(formatNumberWithScientific(12345.6789), '12345.6789');
+  });
+
+  test('uses scientific formatting only when plain value cannot fit in 10', () {
+    final text = formatNumberWithScientific(12345678901);
     expect(text.contains('10^'), isTrue);
     expect(text.contains('e'), isFalse);
+  });
+
+  test('shows error when value is out of range', () {
+    expect(formatNumberWithScientific(double.infinity), 'Error: out of range');
+    expect(formatNumberWithScientific(double.nan), 'Error: out of range');
+  });
+
+  test('formats tiny non-zero values as scientific, not empty', () {
+    final text = formatNumberWithScientific(9.094947017729282e-13);
+    expect(text.isNotEmpty, isTrue);
+    expect(text.contains('10^'), isTrue);
   });
 }

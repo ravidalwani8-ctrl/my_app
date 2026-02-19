@@ -45,4 +45,17 @@ class Converters {
     // input * (B / A)
     return input * (b / a);
   }
+
+  // -------------------------
+  // Factor-based units
+  // Example: value in fromFactor -> toFactor
+  // -------------------------
+  static double convertByFactors(
+    double value,
+    double fromFactor,
+    double toFactor,
+  ) {
+    final baseValue = value * fromFactor;
+    return baseValue / toFactor;
+  }
 }

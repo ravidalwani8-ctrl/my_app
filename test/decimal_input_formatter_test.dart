@@ -36,6 +36,36 @@ void main() {
       expect(out.text, '1.2');
     });
 
+    test('rejects multiple leading zeros before integer digits', () {
+      final out = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: '0001'),
+      );
+      expect(out.text, '');
+    });
+
+    test('replaces leading 0 when user continues typing integer digits', () {
+      final out = f.formatEditUpdate(
+        const TextEditingValue(text: '0'),
+        const TextEditingValue(text: '05'),
+      );
+      expect(out.text, '5');
+    });
+
+    test('allows 0.xxx and normalizes a first-entered dot to 0.', () {
+      final withZero = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: '0.001'),
+      );
+      expect(withZero.text, '0.001');
+
+      final firstDot = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: '.'),
+      );
+      expect(firstDot.text, '0.');
+    });
+
     test('rejects letters', () {
       final out = f.formatEditUpdate(
         const TextEditingValue(text: ''),
@@ -58,6 +88,34 @@ void main() {
         const TextEditingValue(text: '1.23e-4'),
       );
       expect(out.text, '1.23e-4');
+    });
+
+    test('normalizes scientific markers without leading digits', () {
+      final out1 = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: 'x'),
+      );
+      expect(out1.text, '1×10^');
+
+      final out2 = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: '*'),
+      );
+      expect(out2.text, '1×10^');
+
+      final out3 = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: 'e3'),
+      );
+      expect(out3.text, '1e3');
+    });
+
+    test('normalizes leading e to 1e', () {
+      final out = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: 'e'),
+      );
+      expect(out.text, '1e');
     });
 
     test('expands x to ×10^', () {

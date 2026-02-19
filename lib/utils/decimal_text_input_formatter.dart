@@ -11,6 +11,16 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     this.allowScientific = false,
   }) : assert(decimalRange >= 0);
 
+  bool _hasInvalidLeadingZeros(String numericText) {
+    var text = numericText;
+    if (text.startsWith('-')) text = text.substring(1);
+    if (text.isEmpty) return false;
+
+    // Allow: 0, 0.xxx, .xxx
+    // Reject: 00, 0001, 01, 00.1
+    return text.startsWith('0') && text.length > 1 && !text.startsWith('0.');
+  }
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -25,19 +35,57 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     // Allow typing a leading minus before number
     if (allowNegative && text == '-') return newValue;
 
-    // If user types leading dot, convert to 0.
+    // Keep old behavior: when first char is ".", normalize to "0."
     if (text == '.') {
-      return TextEditingValue(
+      return const TextEditingValue(
         text: '0.',
         selection: TextSelection.collapsed(offset: 2),
       );
     }
 
-    // Normalize "-." to "-0." for easier further typing.
-    if (allowNegative && text == '-.') {
+    // If user starts with e or E, normalize to 1e...
+    if (allowScientific && (text.startsWith('e') || text.startsWith('E'))) {
+      final rest = text.substring(1);
+      final nextText = '1e$rest';
       return TextEditingValue(
+        text: nextText,
+        selection: TextSelection.collapsed(offset: nextText.length),
+      );
+    }
+
+    // If user starts with x or *, normalize to 1×10^
+    if (allowScientific && (text == 'x' || text == 'X' || text == '*')) {
+      return const TextEditingValue(
+        text: '1×10^',
+        selection: TextSelection.collapsed(offset: 5),
+      );
+    }
+
+    // Keep old behavior for negative mode too.
+    if (allowNegative && text == '-.') {
+      return const TextEditingValue(
         text: '-0.',
         selection: TextSelection.collapsed(offset: 3),
+      );
+    }
+
+    // If user typed a digit after an initial zero (e.g. 0 -> 05),
+    // replace the leading 0 with that digit instead of blocking input.
+    if (RegExp(r'^0[0-9]$').hasMatch(text) && oldValue.text == '0') {
+      final next = text.substring(1);
+      return TextEditingValue(
+        text: next,
+        selection: TextSelection.collapsed(offset: next.length),
+      );
+    }
+
+    if (allowNegative &&
+        RegExp(r'^-0[0-9]$').hasMatch(text) &&
+        oldValue.text == '-0') {
+      final next = '-${text.substring(2)}';
+      return TextEditingValue(
+        text: next,
+        selection: TextSelection.collapsed(offset: next.length),
       );
     }
 
@@ -83,6 +131,11 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     // Expand * / x / X into display-style scientific marker ×10^.
     final markerMatch = RegExp(r'[xX*]').firstMatch(text);
     if (allowScientific && markerMatch != null) {
+      // Require at least one digit before the marker.
+      final prefix = text.substring(0, markerMatch.start);
+      if (!RegExp(r'[0-9]').hasMatch(prefix)) {
+        return oldValue;
+      }
       // Allow only one scientific marker.
       if (oldValue.text.contains('×10^') || text.contains('×10^')) {
         return oldValue;
@@ -107,6 +160,7 @@ class DecimalTextInputFormatter extends TextInputFormatter {
           ? RegExp(r'^-?[0-9]*\.?[0-9]*$')
           : RegExp(r'^[0-9]*\.?[0-9]*$');
       if (!mantissaRegex.hasMatch(mantissa)) return oldValue;
+      if (_hasInvalidLeadingZeros(mantissa)) return oldValue;
 
       // Mantissa must contain at least one digit before exponent marker.
       if (!RegExp(r'[0-9]').hasMatch(mantissa)) return oldValue;
@@ -131,6 +185,7 @@ class DecimalTextInputFormatter extends TextInputFormatter {
           ? RegExp(r'^-?[0-9]*\.?[0-9]*$')
           : RegExp(r'^[0-9]*\.?[0-9]*$');
       if (!mantissaRegex.hasMatch(mantissa)) return oldValue;
+      if (_hasInvalidLeadingZeros(mantissa)) return oldValue;
       if (!RegExp(r'[0-9]').hasMatch(mantissa)) return oldValue;
       if (!RegExp(r'^[+-]?[0-9]*$').hasMatch(exponent)) return oldValue;
       if (mantissa.contains('.')) {
@@ -147,6 +202,7 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     if (!normalRegex.hasMatch(text)) {
       return oldValue;
     }
+    if (_hasInvalidLeadingZeros(text)) return oldValue;
 
     // Prevent multiple decimal points
     if (text.indexOf('.') != text.lastIndexOf('.')) return oldValue;

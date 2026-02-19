@@ -10,6 +10,7 @@ import '../models/favorite_item.dart';
 import '../widgets/gradient_header.dart';
 import '../widgets/result_box.dart';
 import '../utils/number_formatter.dart';
+import '../utils/converters.dart';
 
 class ConversionScreen extends StatefulWidget {
   final Category category;
@@ -54,8 +55,11 @@ class _ConversionScreenState extends State<ConversionScreen> {
     // Map-based conversion using unit name -> factor map
     final fromFactor = unitMap[fromUnit.name] ?? fromUnit.factor;
     final toFactor = unitMap[toUnit.name] ?? toUnit.factor;
-    double baseValue = value * fromFactor;
-    double finalValue = baseValue / toFactor;
+    final finalValue = Converters.convertByFactors(
+      value,
+      fromFactor,
+      toFactor,
+    );
 
     setState(() {
       result = finalValue;
@@ -79,6 +83,10 @@ class _ConversionScreenState extends State<ConversionScreen> {
     final inputValue = parseScientificInput(input, allowNegative: false);
     if (inputValue == null) {
       _showSnack("Enter a valid number");
+      return;
+    }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
       return;
     }
 
@@ -105,6 +113,10 @@ class _ConversionScreenState extends State<ConversionScreen> {
       _showSnack("Enter a valid number");
       return;
     }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
+      return;
+    }
 
     Provider.of<HistoryProvider>(context, listen: false).addHistory(
       HistoryItem(
@@ -128,6 +140,116 @@ class _ConversionScreenState extends State<ConversionScreen> {
     );
   }
 
+  String? get _validationError {
+    if (input.isEmpty) return null;
+    final parsed = parseScientificInput(input, allowNegative: false);
+    if (parsed == null) {
+      return "Please enter a valid non-negative value.";
+    }
+    if (!result.isFinite) {
+      return "Result is out of range. Try a smaller value.";
+    }
+    return null;
+  }
+
+
+  bool get _canSave {
+    if (input.isEmpty) return false;
+    if (parseScientificInput(input, allowNegative: false) == null) return false;
+    if (!result.isFinite) return false;
+    return true;
+  }
+
+
+  List<(String label, String from, String to, String value)> _presetsForCategory(
+    String category,
+  ) {
+    switch (category) {
+      case "Length":
+        return [
+          ("1 m -> cm", "Meter", "Centimeter", "1"),
+          ("1 mile -> km", "Mile", "Kilometer", "1"),
+          ("12 in -> ft", "Inch", "Foot", "12"),
+        ];
+      case "Weight":
+        return [
+          ("1 kg -> lb", "Kilogram", "Pound", "1"),
+          ("1000 g -> kg", "Gram", "Kilogram", "1000"),
+          ("16 oz -> lb", "Ounce", "Pound", "16"),
+        ];
+      case "Time":
+        return [
+          ("1 hr -> min", "Hour", "Minute", "1"),
+          ("1 day -> hr", "Day", "Hour", "1"),
+          ("1 week -> day", "Week", "Day", "1"),
+        ];
+      case "Energy":
+        return [
+          ("1 kWh -> J", "Kilowatt-hour", "Joule", "1"),
+          ("1 kcal -> J", "Kilocalorie", "Joule", "1"),
+          ("1000 J -> kJ", "Joule", "Kilojoule", "1000"),
+        ];
+      case "Speed":
+        return [
+          ("1 m/s -> km/h", "m/s", "km/h", "1"),
+          ("60 mph -> km/h", "mph", "km/h", "60"),
+          ("10 knot -> m/s", "knot", "m/s", "10"),
+        ];
+      case "Pressure":
+        return [
+          ("1 atm -> kPa", "atm", "kPa", "1"),
+          ("1 bar -> psi", "bar", "psi", "1"),
+          ("101325 Pa -> atm", "Pascal", "atm", "101325"),
+        ];
+      case "Data":
+        return [
+          ("1024 B -> KB", "Byte", "Kilobyte", "1024"),
+          ("1 GB -> MB", "Gigabyte", "Megabyte", "1"),
+          ("1 TB -> GB", "Terabyte", "Gigabyte", "1"),
+        ];
+      case "Area":
+        return [
+          ("1 m² -> cm²", "Square meter", "Square centimeter", "1"),
+          ("1 acre -> m²", "Acre", "Square meter", "1"),
+          ("1 km² -> m²", "Square kilometer", "Square meter", "1"),
+        ];
+      case "Power":
+        return [
+          ("1 kW -> W", "Kilowatt", "Watt", "1"),
+          ("1 hp -> W", "Horsepower", "Watt", "1"),
+          ("1 MW -> kW", "Megawatt", "Kilowatt", "1"),
+        ];
+      case "Frequency":
+        return [
+          ("1 GHz -> MHz", "Gigahertz", "Megahertz", "1"),
+          ("60 RPM -> Hz", "RPM", "Hertz", "60"),
+          ("1000 Hz -> kHz", "Hertz", "Kilohertz", "1000"),
+        ];
+      default:
+        return [];
+    }
+  }
+
+  void _applyPreset((String label, String from, String to, String value) p) {
+    Unit findUnit(String name, Unit fallback) {
+      for (final u in widget.category.units) {
+        if (u.name == name) return u;
+      }
+      return fallback;
+    }
+
+    setState(() {
+      fromUnit = findUnit(p.$2, fromUnit);
+      toUnit = findUnit(p.$3, toUnit);
+      input = p.$4;
+      _controller.text = p.$4;
+      _controller.selection = TextSelection.collapsed(
+        offset: _controller.text.length,
+      );
+    });
+    convert();
+  }
+
   String _categoryTip(String categoryName) {
     switch (categoryName) {
       case "Length":
@@ -144,6 +266,12 @@ class _ConversionScreenState extends State<ConversionScreen> {
         return "💡 Tip: 1 bar = 14.5038 psi";
       case "Data":
         return "💡 Tip: 1 KB = 1024 Bytes";
+      case "Area":
+        return "💡 Tip: 1 m² = 10,000 cm²";
+      case "Power":
+        return "💡 Tip: 1 kW = 1000 W";
+      case "Frequency":
+        return "💡 Tip: 1 Hz = 1 cycle/second";
       default:
         return "💡 Tip: Select units first, then enter value.";
     }
@@ -158,14 +286,30 @@ class _ConversionScreenState extends State<ConversionScreen> {
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
               children: [
+                if (_presetsForCategory(widget.category.name).isNotEmpty) ...[
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _presetsForCategory(widget.category.name)
+                        .map(
+                          (p) => ActionChip(
+                            label: Text(p.$1),
+                            onPressed: () => _applyPreset(p),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 // LABEL
                 Text(
                   "Enter value to convert",
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // VALUE INPUT
                 TextField(
@@ -188,7 +332,15 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 12),
+                if (_validationError != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _validationError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
 
                 // FROM UNIT
                 DropdownButtonFormField<Unit>(
@@ -209,7 +361,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // SWITCH BUTTON
                 Center(
@@ -223,7 +375,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // TO UNIT
                 DropdownButtonFormField<Unit>(
@@ -244,15 +396,20 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // RESULT BOX
                 ResultBox(
                   label: "Result",
                   value: "${formatNumberWithScientific(result)} ${toUnit.name}",
+                  canCopy:
+                      input.isNotEmpty &&
+                      parseScientificInput(input, allowNegative: false) !=
+                          null &&
+                      result.isFinite,
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // TIPS
                 Text(
@@ -260,7 +417,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
                   style: TextStyle(fontSize: 15, color: Colors.grey),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // ACTION BUTTONS
                 Row(
@@ -269,12 +426,12 @@ class _ConversionScreenState extends State<ConversionScreen> {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.favorite_border),
                       label: const Text("Favorite"),
-                      onPressed: saveFavorite,
+                      onPressed: _canSave ? saveFavorite : null,
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.save_alt),
                       label: const Text("Save to History"),
-                      onPressed: saveHistory,
+                      onPressed: _canSave ? saveHistory : null,
                     ),
                   ],
                 ),

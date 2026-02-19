@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../utils/decimal_text_input_formatter.dart';
 import 'package:provider/provider.dart';
 import '../widgets/gradient_header.dart';
@@ -41,7 +42,12 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
 
   /// SAVE FAVORITE
   void saveFavorite() {
-    if (unitA.isEmpty || unitB.isEmpty || rate.isEmpty || value.isEmpty) {
+    final normalizedUnitA = unitA.trim();
+    final normalizedUnitB = unitB.trim();
+    if (normalizedUnitA.isEmpty ||
+        normalizedUnitB.isEmpty ||
+        rate.isEmpty ||
+        value.isEmpty) {
       _showSnack("Enter units, rate and value first");
       return;
     }
@@ -52,14 +58,18 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
       _showSnack("Enter a valid value");
       return;
     }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
+      return;
+    }
     Provider.of<FavoritesProvider>(context, listen: false).addFavorite(
       FavoriteItem(
         inputValue: inputValue,
         resultValue: inputValue * rateValue,
         rateUsed: rateValue,
         category: "Custom",
-        fromUnit: unitA,
-        toUnit: unitB,
+        fromUnit: normalizedUnitA,
+        toUnit: normalizedUnitB,
         timestamp: DateTime.now(),
       ),
     );
@@ -69,7 +79,9 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
 
   /// SAVE HISTORY
   void saveHistory() {
-    if (unitA.isEmpty || unitB.isEmpty || value.isEmpty) {
+    final normalizedUnitA = unitA.trim();
+    final normalizedUnitB = unitB.trim();
+    if (normalizedUnitA.isEmpty || normalizedUnitB.isEmpty || value.isEmpty) {
       _showSnack("Enter all details first");
       return;
     }
@@ -83,12 +95,16 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
       _showSnack("Enter a valid rate");
       return;
     }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
+      return;
+    }
 
     Provider.of<HistoryProvider>(context, listen: false).addHistory(
       HistoryItem(
         category: "Custom",
-        fromUnit: unitA,
-        toUnit: unitB,
+        fromUnit: normalizedUnitA,
+        toUnit: normalizedUnitB,
         inputValue: formatNumberWithScientific(inputValue),
         result: formatNumberWithScientific(result),
         timestamp: formatTimestampToMinute(DateTime.now()),
@@ -108,6 +124,31 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
     );
   }
 
+  String? get _validationError {
+    if (value.isEmpty && rate.isEmpty) return null;
+    if (value.isNotEmpty &&
+        parseScientificInput(value, allowNegative: false) == null) {
+      return "Please enter a valid non-negative value.";
+    }
+    if (rate.isNotEmpty &&
+        parseScientificInput(rate, allowNegative: false) == null) {
+      return "Please enter a valid non-negative conversion rate.";
+    }
+    if (value.isNotEmpty && rate.isNotEmpty && !result.isFinite) {
+      return "Result is out of range. Try smaller values.";
+    }
+    return null;
+  }
+
+
+  bool get _canSave {
+    if (unitA.trim().isEmpty || unitB.trim().isEmpty) return false;
+    if (value.isEmpty || rate.isEmpty) return false;
+    if (parseScientificInput(value, allowNegative: false) == null) return false;
+    if (parseScientificInput(rate, allowNegative: false) == null) return false;
+    if (!result.isFinite) return false;
+    return true;
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,38 +158,52 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
               children: [
+                Text(
+                  "Define unit name",
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+
                 // UNIT A
                 TextField(
                   decoration: const InputDecoration(
                     labelText: "Unit A",
-                    hintText: "Example: Mango",
+                    hintText: "Example: kilometer",
                     border: OutlineInputBorder(),
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z ]")),
+                    LengthLimitingTextInputFormatter(12),
+                  ],
                   onChanged: (v) => setState(() => unitA = v),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // UNIT B
                 TextField(
                   decoration: const InputDecoration(
                     labelText: "Unit B",
-                    hintText: "Example: Apple",
+                    hintText: "Example: meter",
                     border: OutlineInputBorder(),
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z ]")),
+                    LengthLimitingTextInputFormatter(12),
+                  ],
                   onChanged: (v) => setState(() => unitB = v),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 const Text(
-                  "💡 Example: If 1 Mango = 2 Apples → Enter 2 below.",
+                  "💡 Example: If 1 kilometer = 1000 meters → Enter 1000 below.",
                   style: TextStyle(fontSize: 15, color: Colors.grey),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // RATE
                 TextField(
@@ -170,7 +225,13 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+
+                Text(
+                  "Enter value to convert",
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
 
                 // VALUE
                 TextField(
@@ -191,15 +252,31 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                   },
                 ),
 
-                const SizedBox(height: 12),
+                if (_validationError != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _validationError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
 
                 // RESULT BOX
                 ResultBox(
                   label: "Converted Value",
                   value: "${formatNumberWithScientific(result)} $unitB",
+                  canCopy:
+                      value.isNotEmpty &&
+                      rate.isNotEmpty &&
+                      parseScientificInput(value, allowNegative: false) !=
+                          null &&
+                      parseScientificInput(rate, allowNegative: false) !=
+                          null &&
+                      result.isFinite,
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // ACTION BUTTONS
                 Row(
@@ -208,12 +285,12 @@ class _CustomConversionScreenState extends State<CustomConversionScreen> {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.favorite_border),
                       label: const Text("Favorite"),
-                      onPressed: saveFavorite,
+                      onPressed: _canSave ? saveFavorite : null,
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.save_alt),
                       label: const Text("Save History"),
-                      onPressed: saveHistory,
+                      onPressed: _canSave ? saveHistory : null,
                     ),
                   ],
                 ),

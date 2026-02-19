@@ -5,14 +5,20 @@ import '../models/favorite_item.dart';
 
 class FavoritesProvider with ChangeNotifier {
   static const String _storageKey = "favorites_list";
+  static const int _maxFavorites = 5;
 
   final List<FavoriteItem> _favorites = [];
+  Future<void>? _loadingFuture;
 
   UnmodifiableListView<FavoriteItem> get favorites =>
       UnmodifiableListView(_favorites);
 
   FavoritesProvider() {
-    loadFavorites();
+    _loadingFuture = loadFavorites();
+  }
+
+  Future<void> _ensureLoaded() async {
+    await (_loadingFuture ??= loadFavorites());
   }
 
   Future<void> loadFavorites() async {
@@ -31,6 +37,8 @@ class FavoritesProvider with ChangeNotifier {
   }
 
   Future<void> addFavorite(FavoriteItem item) async {
+    await _ensureLoaded();
+
     final exists = _favorites.any(
       (f) =>
           f.category == item.category &&
@@ -43,18 +51,40 @@ class FavoritesProvider with ChangeNotifier {
     if (exists) return;
 
     _favorites.insert(0, item);
+    if (_favorites.length > _maxFavorites) {
+      _favorites.removeRange(_maxFavorites, _favorites.length);
+    }
     await _saveToStorage();
     notifyListeners();
   }
 
   Future<void> removeFavorite(FavoriteItem item) async {
+    await _ensureLoaded();
     _favorites.remove(item);
     await _saveToStorage();
     notifyListeners();
   }
 
+  Future<void> insertFavoriteAt(int index, FavoriteItem item) async {
+    await _ensureLoaded();
+    final safeIndex = index.clamp(0, _favorites.length);
+    _favorites.insert(safeIndex, item);
+    await _saveToStorage();
+    notifyListeners();
+  }
+
   Future<void> clearFavorites() async {
+    await _ensureLoaded();
     _favorites.clear();
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> restoreAllFavorites(List<FavoriteItem> items) async {
+    await _ensureLoaded();
+    _favorites
+      ..clear()
+      ..addAll(items);
     await _saveToStorage();
     notifyListeners();
   }

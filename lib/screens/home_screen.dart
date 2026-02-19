@@ -13,14 +13,17 @@ import '../widgets/gradient_header.dart';
 final Map<String, IconData> categoryIcons = {
   "Length": Icons.straighten,
   "Weight": Icons.monitor_weight,
+  "Area": Icons.square_foot,
   //"Area": Icons.crop_square,
   //"Volume": Icons.local_drink,
   "Speed": Icons.speed,
   "Time": Icons.access_time,
   "Pressure": Icons.compress,
   "Energy": Icons.bolt,
+  "Power": Icons.power,
   //"Power": Icons.power,
   "Data": Icons.storage,
+  "Frequency": Icons.graphic_eq,
 };
 
 class HomeScreen extends StatelessWidget {
@@ -33,6 +36,8 @@ class HomeScreen extends StatelessWidget {
         return Colors.orange;
       case "Weight":
         return Colors.blue;
+      case "Area":
+        return Colors.teal;
       case "Time":
         return Colors.amber;
       case "Energy":
@@ -41,8 +46,12 @@ class HomeScreen extends StatelessWidget {
         return Colors.green;
       case "Pressure":
         return Colors.orange;
+      case "Power":
+        return Colors.deepPurple;
       case "Data":
         return Colors.blue;
+      case "Frequency":
+        return Colors.indigo;
       default:
         return Colors.purple;
     }
@@ -129,7 +138,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 /// ----------------------------------------------------
                 /// 2) CURRENCY (SECOND)
@@ -169,45 +178,47 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 /// ----------------------------------------------------
                 /// 3) MAIN CATEGORIES (Length, Weight, Area, etc.)
                 /// ----------------------------------------------------
-                ...allCategories.map(
-                  (cat) => Card(
-                    child: ListTile(
-                      leading: Icon(
-                        categoryIcons[cat.name] ?? Icons.ac_unit,
-                        color: _getCategoryColor(cat.name),
+                ...allCategories.expand(
+                  (cat) => [
+                    Card(
+                      child: ListTile(
+                        leading: Icon(
+                          categoryIcons[cat.name] ?? Icons.ac_unit,
+                          color: _getCategoryColor(cat.name),
+                        ),
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(cat.name, style: const TextStyle(fontSize: 18)),
+                            Icon(
+                              Icons.swap_horiz,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.purpleAccent
+                                  : Colors.purple,
+                            ),
+                          ],
+                        ),
+                        trailing: const Icon(Icons.keyboard_arrow_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ConversionScreen(category: cat),
+                            ),
+                          );
+                        },
                       ),
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(cat.name, style: const TextStyle(fontSize: 18)),
-                          Icon(
-                            Icons.swap_horiz,
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.purpleAccent
-                                : Colors.purple,
-                          ),
-                        ],
-                      ),
-                      trailing: const Icon(Icons.keyboard_arrow_right),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ConversionScreen(category: cat),
-                          ),
-                        );
-                      },
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
-
-                const SizedBox(height: 12),
 
                 /// ----------------------------------------------------
                 /// 4) CUSTOM CONVERTER
@@ -242,7 +253,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 /// ----------------------------------------------------
                 /// 6) 2×2 GRID: Tips, Favorites, History, Settings

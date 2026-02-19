@@ -49,6 +49,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
       _showSnack("Enter a valid amount");
       return;
     }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
+      return;
+    }
     Provider.of<FavoritesProvider>(context, listen: false).addFavorite(
       FavoriteItem(
         inputValue: amountValue,
@@ -72,6 +76,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     final amountValue = parseScientificInput(amount, allowNegative: false);
     if (amountValue == null) {
       _showSnack("Enter a valid amount");
+      return;
+    }
+    if (!result.isFinite) {
+      _showSnack("Cannot save: result is out of range");
       return;
     }
 
@@ -100,6 +108,32 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     );
   }
 
+  String? get _validationError {
+    if (amount.isEmpty && rateInput.isEmpty) return null;
+    if (amount.isNotEmpty &&
+        parseScientificInput(amount, allowNegative: false) == null) {
+      return "Please enter a valid non-negative amount.";
+    }
+    if (rateInput.isNotEmpty &&
+        parseScientificInput(rateInput, allowNegative: false) == null) {
+      return "Please enter a valid non-negative rate.";
+    }
+    if (amount.isNotEmpty && rateInput.isNotEmpty && !result.isFinite) {
+      return "Result is out of range. Try smaller values.";
+    }
+    return null;
+  }
+
+
+  bool get _canSave {
+    if (amount.isEmpty || rateInput.isEmpty) return false;
+    if (parseScientificInput(amount, allowNegative: false) == null) return false;
+    if (parseScientificInput(rateInput, allowNegative: false) == null) {
+      return false;
+    }
+    if (!result.isFinite) return false;
+    return true;
+  }
   /// Numeric-only calculation
   void calculate() {
     if (amount.isEmpty || rateInput.isEmpty) {
@@ -125,7 +159,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
               child: ListView(
                 children: [
                   Text(
@@ -133,7 +167,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // AMOUNT INPUT
                   TextField(
@@ -154,7 +188,15 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  if (_validationError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _validationError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
 
                   // FROM CURRENCY
                   DropdownButtonFormField<String>(
@@ -177,7 +219,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // SWAP BUTTON
                   Center(
@@ -191,7 +233,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // TO CURRENCY
                   DropdownButtonFormField<String>(
@@ -214,12 +256,12 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   const Text(
                     "💡 Example: If 1 USD = 83 INR → Enter 83 only.",
                     style: TextStyle(fontSize: 15, color: Colors.grey),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   // RATE INPUT
                   TextField(
                     keyboardType: TextInputType.number,
@@ -240,15 +282,26 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // RESULT BOX
                   ResultBox(
                     label: "Converted Amount",
                     value: "${formatNumberWithScientific(result)} $to",
+                    canCopy:
+                        amount.isNotEmpty &&
+                        rateInput.isNotEmpty &&
+                        parseScientificInput(amount, allowNegative: false) !=
+                            null &&
+                        parseScientificInput(
+                              rateInput,
+                              allowNegative: false,
+                            ) !=
+                            null &&
+                        result.isFinite,
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // ACTION BUTTONS
                   Row(
@@ -257,12 +310,12 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.favorite_border),
                         label: const Text("Favorite"),
-                        onPressed: saveFavorite,
+                        onPressed: _canSave ? saveFavorite : null,
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.save_alt),
                         label: const Text("Save to History"),
-                        onPressed: saveHistory,
+                        onPressed: _canSave ? saveHistory : null,
                       ),
                     ],
                   ),
