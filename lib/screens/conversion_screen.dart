@@ -181,7 +181,7 @@ class _ConversionScreenState extends State<ConversionScreen> {
         return [
           ("1 hr -> min", "Hour", "Minute", "1"),
           ("1 day -> hr", "Day", "Hour", "1"),
-          ("1 week -> day", "Week", "Day", "1"),
+          ("1 day -> sec", "Day", "Second", "1"),
         ];
       case "Energy":
         return [
@@ -193,13 +193,12 @@ class _ConversionScreenState extends State<ConversionScreen> {
         return [
           ("1 m/s -> km/h", "m/s", "km/h", "1"),
           ("60 mph -> km/h", "mph", "km/h", "60"),
-          ("10 knot -> m/s", "knot", "m/s", "10"),
         ];
       case "Pressure":
         return [
           ("1 atm -> kPa", "atm", "kPa", "1"),
           ("1 bar -> psi", "bar", "psi", "1"),
-          ("101325 Pa -> atm", "Pascal", "atm", "101325"),
+          ("1 Pa -> atm", "Pascal", "atm", "1"),
         ];
       case "Data":
         return [
@@ -223,7 +222,6 @@ class _ConversionScreenState extends State<ConversionScreen> {
         return [
           ("1 GHz -> MHz", "Gigahertz", "Megahertz", "1"),
           ("60 RPM -> Hz", "RPM", "Hertz", "60"),
-          ("1000 Hz -> kHz", "Hertz", "Kilohertz", "1000"),
         ];
       default:
         return [];
@@ -289,17 +287,21 @@ class _ConversionScreenState extends State<ConversionScreen> {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
               children: [
                 if (_presetsForCategory(widget.category.name).isNotEmpty) ...[
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _presetsForCategory(widget.category.name)
-                        .map(
-                          (p) => ActionChip(
-                            label: Text(p.$1),
-                            onPressed: () => _applyPreset(p),
-                          ),
-                        )
-                        .toList(),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _presetsForCategory(widget.category.name)
+                          .map(
+                            (p) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ActionChip(
+                                label: Text(p.$1),
+                                onPressed: () => _applyPreset(p),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],

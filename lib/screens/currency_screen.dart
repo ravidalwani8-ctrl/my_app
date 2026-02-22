@@ -17,7 +17,28 @@ class CurrencyScreen extends StatefulWidget {
 }
 
 class _CurrencyScreenState extends State<CurrencyScreen> {
-  final List<String> currencies = ["INR", "USD", "EUR", "GBP", "JPY", "AED"];
+  final List<String> currencies = [
+    "INR",
+    "USD",
+    "EUR",
+    "GBP",
+    "JPY",
+    "AED",
+    "AUD",
+    "CAD",
+    "CHF",
+    "CNY",
+    "HKD",
+    "SGD",
+    "NZD",
+    "KRW",
+  ];
+
+  final List<(String label, String from, String to, String amount, String rate)>
+  _presets = [
+    ("1 USD -> INR (83)", "USD", "INR", "1", "83"),
+    ("1 EUR -> USD (1.1)", "EUR", "USD", "1", "1.1"),
+  ];
 
   String from = "USD";
   String to = "INR";
@@ -26,12 +47,55 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
   String rateInput = "";
   double result = 0;
 
+  late TextEditingController _amountController;
+  late TextEditingController _rateController;
+  late FocusNode _amountFocusNode;
+  late FocusNode _rateFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController();
+    _rateController = TextEditingController();
+    _amountFocusNode = FocusNode();
+    _rateFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _rateController.dispose();
+    _amountFocusNode.dispose();
+    _rateFocusNode.dispose();
+    super.dispose();
+  }
+
   /// Swap currency direction
   void swapCurrencies() {
     setState(() {
       final t = from;
       from = to;
       to = t;
+    });
+    calculate();
+  }
+
+  void _applyPreset(
+    (String label, String from, String to, String amount, String rate) p,
+  ) {
+    setState(() {
+      from = p.$2;
+      to = p.$3;
+      amount = p.$4;
+      rateInput = p.$5;
+      _amountController.text = p.$4;
+      _rateController.text = p.$5;
+      _amountController.selection = TextSelection.collapsed(
+        offset: _amountController.text.length,
+      );
+      _rateController.selection = TextSelection.collapsed(
+        offset: _rateController.text.length,
+      );
     });
     calculate();
   }
@@ -108,17 +172,27 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     );
   }
 
-  String? get _validationError {
-    if (amount.isEmpty && rateInput.isEmpty) return null;
-    if (amount.isNotEmpty &&
-        parseScientificInput(amount, allowNegative: false) == null) {
+  String? get _amountValidationError {
+    if (amount.isEmpty) return null;
+    if (parseScientificInput(amount, allowNegative: false) == null) {
       return "Please enter a valid non-negative amount.";
     }
-    if (rateInput.isNotEmpty &&
-        parseScientificInput(rateInput, allowNegative: false) == null) {
+    return null;
+  }
+
+  String? get _rateValidationError {
+    if (rateInput.isEmpty) return null;
+    if (parseScientificInput(rateInput, allowNegative: false) == null) {
       return "Please enter a valid non-negative rate.";
     }
-    if (amount.isNotEmpty && rateInput.isNotEmpty && !result.isFinite) {
+    return null;
+  }
+
+  String? get _rangeValidationError {
+    if (amount.isEmpty || rateInput.isEmpty) return null;
+    if (parseScientificInput(amount, allowNegative: false) == null) return null;
+    if (parseScientificInput(rateInput, allowNegative: false) == null) return null;
+    if (!result.isFinite) {
       return "Result is out of range. Try smaller values.";
     }
     return null;
@@ -160,8 +234,30 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-              child: ListView(
-                children: [
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: true,
+                child: ListView(
+                  children: [
+                  if (_presets.isNotEmpty) ...[
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _presets
+                            .map(
+                              (p) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ActionChip(
+                                  label: Text(p.$1),
+                                  onPressed: () => _applyPreset(p),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   Text(
                     "Enter Amount to convert",
                     style: Theme.of(context).textTheme.titleLarge,
@@ -172,10 +268,12 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                   // AMOUNT INPUT
                   TextField(
                     keyboardType: TextInputType.number,
+                    focusNode: _amountFocusNode,
                     decoration: const InputDecoration(
                       labelText: "Enter Amount",
                       border: OutlineInputBorder(),
                     ),
+                    controller: _amountController,
                     inputFormatters: [
                       DecimalTextInputFormatter(
                         decimalRange: 6,
@@ -188,10 +286,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                     },
                   ),
 
-                  if (_validationError != null) ...[
+                  if (_amountValidationError != null) ...[
                     const SizedBox(height: 8),
                     Text(
-                      _validationError!,
+                      _amountValidationError!,
                       style: const TextStyle(color: Colors.red, fontSize: 12),
                     ),
                   ],
@@ -265,11 +363,13 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                   // RATE INPUT
                   TextField(
                     keyboardType: TextInputType.number,
+                    focusNode: _rateFocusNode,
                     decoration: const InputDecoration(
                       labelText: "Conversion Rate (Enter numeric only)",
                       hintText: "Example: 83",
                       border: OutlineInputBorder(),
                     ),
+                    controller: _rateController,
                     inputFormatters: [
                       DecimalTextInputFormatter(
                         decimalRange: 6,
@@ -281,6 +381,21 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       calculate();
                     },
                   ),
+
+                  if (_rateValidationError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _rateValidationError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                  if (_rangeValidationError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _rangeValidationError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
 
                   const SizedBox(height: 16),
 
@@ -319,7 +434,8 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                       ),
                     ],
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

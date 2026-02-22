@@ -131,18 +131,31 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     // Expand * / x / X into display-style scientific marker ×10^.
     final markerMatch = RegExp(r'[xX*]').firstMatch(text);
     if (allowScientific && markerMatch != null) {
-      // Require at least one digit before the marker.
-      final prefix = text.substring(0, markerMatch.start);
-      if (!RegExp(r'[0-9]').hasMatch(prefix)) {
-        return oldValue;
+      var prefix = text.substring(0, markerMatch.start);
+      var suffix = text.substring(markerMatch.start + 1);
+
+      // If user typed or pasted "x10^11" or "1x10^11", normalize to 1×10^11
+      if (suffix.startsWith('10^')) {
+        suffix = suffix.substring(3);
       }
+
+      // Require at least one digit before the marker, but allow leading marker
+      // as shorthand for "1×10^".
+      if (!RegExp(r'[0-9]').hasMatch(prefix)) {
+        if (markerMatch.start == 0) {
+          prefix = '1';
+        } else {
+          return oldValue;
+        }
+      }
+
       // Allow only one scientific marker.
       if (oldValue.text.contains('×10^') || text.contains('×10^')) {
         return oldValue;
       }
-      final idx = markerMatch.start;
-      final nextText =
-          '${text.substring(0, idx)}×10^${text.substring(idx + 1)}';
+
+      final idx = prefix.length;
+      final nextText = '$prefix×10^$suffix';
       return TextEditingValue(
         text: nextText,
         selection: TextSelection.collapsed(offset: idx + 4),

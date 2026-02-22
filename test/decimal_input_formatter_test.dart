@@ -108,6 +108,12 @@ void main() {
         const TextEditingValue(text: 'e3'),
       );
       expect(out3.text, '1e3');
+
+      final out4 = f.formatEditUpdate(
+        const TextEditingValue(text: ''),
+        const TextEditingValue(text: '/'),
+      );
+      expect(out4.text, '1×10^');
     });
 
     test('normalizes leading e to 1e', () {
@@ -122,6 +128,14 @@ void main() {
       final out = f.formatEditUpdate(
         const TextEditingValue(text: '1'),
         const TextEditingValue(text: '1x'),
+      );
+      expect(out.text, '1×10^');
+    });
+
+    test('expands / to ×10^', () {
+      final out = f.formatEditUpdate(
+        const TextEditingValue(text: '1'),
+        const TextEditingValue(text: '1/'),
       );
       expect(out.text, '1×10^');
     });

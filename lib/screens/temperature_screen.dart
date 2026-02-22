@@ -28,8 +28,6 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
 
   final List<(String label, String from, String to, String value)>
   _presets = [
-    ("Boiling Point", "Celsius", "Fahrenheit", "100"),
-    ("Freezing Point", "Celsius", "Fahrenheit", "0"),
     ("Room Temp", "Celsius", "Fahrenheit", "25"),
     ("Absolute Zero", "Celsius", "Kelvin", "-273.15"),
   ];
@@ -179,19 +177,26 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-              child: ListView(
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _presets
-                        .map(
-                          (p) => ActionChip(
-                            label: Text(p.$1),
-                            onPressed: () => _applyPreset(p),
-                          ),
-                        )
-                        .toList(),
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: true,
+                child: ListView(
+                  children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _presets
+                          .map(
+                            (p) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ActionChip(
+                                label: Text(p.$1),
+                                onPressed: () => _applyPreset(p),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -322,7 +327,8 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                       ),
                     ],
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
